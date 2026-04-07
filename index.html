@@ -89,8 +89,8 @@ h1{font-size:1.4rem;font-weight:700;color:#90cdf4;margin-bottom:14px}
 .edit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:9px}
 .edit-item{border-radius:9px;overflow:hidden;border:2px solid transparent;background:#0f3460;transition:border-color .15s;cursor:pointer}
 .edit-item.selected{border-color:#68d391}
-.edit-thumb-wrap{position:relative;aspect-ratio:1;background:#000;overflow:hidden}
-.edit-thumb-wrap img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .2s}
+.edit-thumb-wrap{position:relative;background:#000;overflow:hidden}
+.edit-thumb-wrap img{width:100%;height:auto;display:block;transition:transform .2s}
 .sel-badge{position:absolute;top:3px;left:3px;background:#68d391;color:#000;font-size:.65rem;font-weight:700;padding:1px 5px;border-radius:3px;display:none}
 .edit-item.selected .sel-badge{display:block}
 .edit-filename{font-size:.65rem;color:#a0aec0;padding:3px 5px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -170,7 +170,7 @@ h1{font-size:1.4rem;font-weight:700;color:#90cdf4;margin-bottom:14px}
           <div class="upload-zone" onclick="selectFolder()">
             <div class="upload-icon">📁</div>
             <div class="upload-text" id="uploadText">點擊選取資料夾</div>
-            <div class="upload-hint">需要 Chrome 或 Edge・照片不會上傳</div>
+            <div class="upload-hint" id="uploadHint">需要 Chrome 或 Edge・照片不會上傳</div>
           </div>
         </div>
 
@@ -213,7 +213,7 @@ h1{font-size:1.4rem;font-weight:700;color:#90cdf4;margin-bottom:14px}
           <div class="upload-zone" onclick="selectEditFolder()">
             <div class="upload-icon">🖼️</div>
             <div class="upload-text" id="editUploadText">點擊選取要編輯的資料夾</div>
-            <div class="upload-hint">需要 Chrome 或 Edge</div>
+            <div class="upload-hint" id="editUploadHint">需要 Chrome 或 Edge</div>
           </div>
         </div>
 
@@ -281,11 +281,10 @@ function toast(msg,type='info'){
 //  NAMING CONFIG — library only
 //  Selection is per-group (stored in group.sel*)
 // ════════════════════════════════
-let namingConfig = {
-  prefix: [],  // [{text}]
-  clinic: [],  // [{text}]
-  suffix: [],  // [{text}]
-};
+let namingConfig = {prefix:[],clinic:[],suffix:[]};
+(function(){try{const s=localStorage.getItem('namingConfig');if(s)namingConfig=JSON.parse(s);}catch(e){}}());
+
+function saveNamingConfig(){try{localStorage.setItem('namingConfig',JSON.stringify(namingConfig));}catch(e){}}
 
 function renderSidebar() {
   ['prefix','clinic','suffix'].forEach(key => {
@@ -308,23 +307,22 @@ window.nsAdd = function(key) {
   const input=document.getElementById(`nsAdd_${key}`);
   const text=input.value.trim(); if(!text) return;
   namingConfig[key].push({text}); input.value='';
-  renderSidebar();
+  renderSidebar(); saveNamingConfig();
 };
 window.nsMove = function(key,i,dir) {
   const arr=namingConfig[key], j=i+dir;
   if(j<0||j>=arr.length) return;
-  [arr[i],arr[j]]=[arr[j],arr[i]]; renderSidebar();
+  [arr[i],arr[j]]=[arr[j],arr[i]]; renderSidebar(); saveNamingConfig();
 };
 window.nsDel = function(key,i) {
   namingConfig[key].splice(i,1);
-  // Clean up group selections that pointed to this index
   groups.forEach(g=>{
     if(key==='prefix') g.selPrefix.delete(i);
     if(key==='clinic' && g.selClinic===i) g.selClinic=null;
     if(key==='suffix') g.selSuffix.delete(i);
   });
   if(key==='clinic' && editState.selClinic===i) editState.selClinic=null;
-  renderSidebar(); updateEditPreview();
+  renderSidebar(); updateEditPreview(); saveNamingConfig();
 };
 
 function exportNaming() {
@@ -380,7 +378,8 @@ async function selectFolder() {
   if(!window.showDirectoryPicker){toast('請使用 Chrome 或 Edge','error');return;}
   try{dirHandle=await window.showDirectoryPicker({mode:'readwrite'});}
   catch(e){if(e.name!=='AbortError')toast('無法開啟：'+e.message,'error');return;}
-  document.getElementById('uploadText').textContent=`已選取：${dirHandle.name}`;
+  document.getElementById('uploadText').textContent=`📁 ${dirHandle.name}`;
+  document.getElementById('uploadHint').innerHTML=`<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();selectFolder()">換資料夾</button>`;
   const imgs=[];
   for await(const[name,handle]of dirHandle){
     if(handle.kind!=='file')continue;
@@ -665,16 +664,16 @@ async function organizeFiles(mode) {
   const btn=document.getElementById(btnId);btn.disabled=true;
   const total=targetGroups.reduce((s,g)=>s+g.photos.length,0);let done=0;
   try{
-    const originalDir=await dirHandle.getDirectoryHandle('原始',{create:true});
     for(const g of targetGroups){
       const fn=groupFolderName(g);
       const personDir=await dirHandle.getDirectoryHandle(fn,{create:true});
+      const origDir=g.namePhotoIdx!=null?await personDir.getDirectoryHandle('原始',{create:true}):null;
       for(let pi=0;pi<g.photos.length;pi++){
         const p=g.photos[pi];
         const fh=await personDir.getFileHandle(p.name,{create:true});
         const w=await fh.createWritable();await w.write(p.file);await w.close();
-        if(pi===g.namePhotoIdx){
-          const ofh=await originalDir.getFileHandle(p.name,{create:true});
+        if(origDir&&pi===g.namePhotoIdx){
+          const ofh=await origDir.getFileHandle(p.name,{create:true});
           const ow=await ofh.createWritable();await ow.write(p.file);await ow.close();
         }
         done++;btn.textContent=`整理中 ${done}/${total}`;
@@ -734,7 +733,8 @@ async function selectEditFolder(){
   if(!window.showDirectoryPicker){toast('請使用 Chrome 或 Edge','error');return;}
   try{editDirHandle=await window.showDirectoryPicker({mode:'readwrite'});}
   catch(e){if(e.name!=='AbortError')toast('無法開啟：'+e.message,'error');return;}
-  document.getElementById('editUploadText').textContent=`已選取：${editDirHandle.name}`;
+  document.getElementById('editUploadText').textContent=`📁 ${editDirHandle.name}`;
+  document.getElementById('editUploadHint').innerHTML=`<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();selectEditFolder()">換資料夾</button>`;
   const imgs=[];
   for await(const[name,handle]of editDirHandle){
     if(handle.kind!=='file')continue;
@@ -793,7 +793,8 @@ window.applyEdit=function(idx,type){
   if(type==='flipV')t.flipV=!t.flipV;
   const img=document.getElementById(`et_${idx}`);if(img)img.style.transform=cssTransform(t);
 };
-function cssTransform(t){if(!t)return'none';const p=[];if(t.rotation)p.push(`rotate(${t.rotation}deg)`);if(t.flipH)p.push('scaleX(-1)');if(t.flipV)p.push('scaleY(-1)');return p.length?p.join(' '):'none';}
+// Flips listed before rotation = applied after rotation in screen space (intuitive)
+function cssTransform(t){if(!t)return'none';const p=[];if(t.flipH)p.push('scaleX(-1)');if(t.flipV)p.push('scaleY(-1)');if(t.rotation)p.push(`rotate(${t.rotation}deg)`);return p.length?p.join(' '):'none';}
 function clearEditSelection(){
   editSelected.clear();editSelOrder=[];
   document.querySelectorAll('.edit-item').forEach(el=>el.classList.remove('selected'));
@@ -815,8 +816,9 @@ async function applyTransformCanvas(file,t){
       const canvas=document.createElement('canvas');
       canvas.width=swapped?img.height:img.width;canvas.height=swapped?img.width:img.height;
       const ctx=canvas.getContext('2d');
-      ctx.translate(canvas.width/2,canvas.height/2);ctx.rotate(r*Math.PI/180);
+      ctx.translate(canvas.width/2,canvas.height/2);
       if(t.flipH)ctx.scale(-1,1);if(t.flipV)ctx.scale(1,-1);
+      ctx.rotate(r*Math.PI/180);
       ctx.drawImage(img,-img.width/2,-img.height/2);
       URL.revokeObjectURL(img.src);
       canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('canvas empty')),'image/jpeg',0.95);
@@ -841,12 +843,14 @@ async function saveEditPhotos(){
   try{
     const outDir=await editDirHandle.getDirectoryHandle(folderName,{create:true});
     const order=editSelOrder.length?editSelOrder:[...editSelected];
-    for(const idx of order){
+    for(let i=0;i<order.length;i++){
+      const idx=order[i];
       const f=editFiles[idx];
       const t=editTransforms[idx]||{rotation:0,flipH:false,flipV:false};
       const needTransform=t.rotation||t.flipH||t.flipV;
       const blob=needTransform?await applyTransformCanvas(f.file,t):f.file;
-      const outName=needTransform?f.name.replace(/\.[^.]+$/,'.jpg'):f.name;
+      const ext=needTransform?'.jpg':(f.name.match(/(\.[^.]+)$/)?.[1]||'.jpg');
+      const outName=`${folderName}(${i+1})${ext}`;
       const fh=await outDir.getFileHandle(outName,{create:true});
       const w=await fh.createWritable();await w.write(blob);await w.close();
       done++;btn.textContent=`儲存中 ${done}/${total}`;
@@ -855,6 +859,9 @@ async function saveEditPhotos(){
   }catch(e){toast('儲存失敗：'+e.message,'error');}
   finally{btn.textContent='💾 儲存';updateEditSelCount();}
 }
+
+// Init: restore sidebar from localStorage
+renderSidebar();
 </script>
 </body>
 </html>
