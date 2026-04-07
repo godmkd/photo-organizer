@@ -9,382 +9,363 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1a2e;color:#e2e8f0;min-height:100vh}
-.container{max-width:1000px;margin:0 auto;padding:20px}
-h1{font-size:1.5rem;font-weight:700;margin-bottom:16px;color:#90cdf4}
-.tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid rgba(255,255,255,.1)}
-.tab-btn{padding:8px 20px;border-radius:8px 8px 0 0;border:none;cursor:pointer;font-size:.9rem;font-weight:600;background:transparent;color:#718096;border-bottom:2px solid transparent;transition:all .15s}
+h1{font-size:1.4rem;font-weight:700;color:#90cdf4;margin-bottom:14px}
+/* Layout */
+.page{max-width:1200px;margin:0 auto;padding:16px}
+.layout{display:flex;gap:14px;align-items:flex-start}
+.sidebar{width:240px;flex-shrink:0;position:sticky;top:16px;max-height:calc(100vh - 32px);overflow-y:auto}
+.main{flex:1;min-width:0}
+@media(max-width:780px){.layout{flex-direction:column}.sidebar{width:100%;position:static;max-height:none}}
+/* Sidebar */
+.sidebar-card{background:#16213e;border-radius:10px;border:1px solid rgba(255,255,255,.08);padding:14px;margin-bottom:12px}
+.sidebar-title{font-size:.82rem;font-weight:700;color:#90cdf4;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.ns-seg{margin-bottom:12px}
+.ns-seg-label{font-size:.72rem;font-weight:700;color:#718096;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.ns-item{display:flex;align-items:center;gap:3px;margin-bottom:3px;padding:2px 4px;border-radius:4px;background:rgba(255,255,255,.04);font-size:.8rem}
+.ns-item-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ns-item button{background:none;border:none;cursor:pointer;font-size:.7rem;padding:1px 3px;color:#718096;line-height:1}
+.ns-item button:hover{color:#e2e8f0}
+.ns-item .del{color:#e53e3e}
+.ns-item .del:hover{color:#fc8181}
+.ns-add-row{display:flex;gap:4px;margin-top:4px}
+.ns-add-input{flex:1;padding:3px 6px;border-radius:4px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#e2e8f0;font-size:.78rem}
+.ns-add-input:focus{outline:none;border-color:#63b3ed}
+.ns-preview{font-size:.74rem;color:#a0aec0;background:rgba(0,0,0,.2);border-radius:5px;padding:6px 8px;margin-top:8px;word-break:break-all}
+.ns-preview strong{color:#f6e05e}
+/* Common */
+.card{background:#16213e;border-radius:12px;padding:18px;margin-bottom:14px;border:1px solid rgba(255,255,255,.08)}
+.tabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid rgba(255,255,255,.1)}
+.tab-btn{padding:7px 18px;border-radius:8px 8px 0 0;border:none;cursor:pointer;font-size:.88rem;font-weight:600;background:transparent;color:#718096;border-bottom:2px solid transparent;transition:all .15s}
 .tab-btn.active{color:#90cdf4;border-bottom-color:#3182ce;background:rgba(49,130,206,.08)}
 .tab-btn:hover:not(.active){color:#a0aec0;background:rgba(255,255,255,.04)}
 .tab-section{display:none}.tab-section.active{display:block}
-.card{background:#16213e;border-radius:12px;padding:20px;margin-bottom:16px;border:1px solid rgba(255,255,255,.08)}
-.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.card-title{font-size:.95rem;font-weight:600;color:#90cdf4}
-.upload-zone{border:2px dashed rgba(99,179,237,.4);border-radius:12px;padding:36px;text-align:center;cursor:pointer;transition:all .2s}
+.upload-zone{border:2px dashed rgba(99,179,237,.4);border-radius:10px;padding:30px;text-align:center;cursor:pointer;transition:all .2s}
 .upload-zone:hover{border-color:#63b3ed;background:rgba(99,179,237,.05)}
-.upload-icon{font-size:2.5rem;margin-bottom:10px}
-.upload-text{font-size:1rem;color:#a0aec0;margin-bottom:6px}
-.upload-hint{font-size:.8rem;color:#718096}
-.btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:.88rem;font-weight:600;transition:all .15s}
+.upload-icon{font-size:2.2rem;margin-bottom:8px}
+.upload-text{font-size:.95rem;color:#a0aec0;margin-bottom:5px}
+.upload-hint{font-size:.76rem;color:#718096}
+.btn{padding:7px 14px;border-radius:7px;border:none;cursor:pointer;font-size:.85rem;font-weight:600;transition:all .15s}
 .btn-primary{background:#3182ce;color:#fff}.btn-primary:hover{background:#2b6cb0}
 .btn-success{background:#276749;color:#fff}.btn-success:hover{background:#22543d}
 .btn-ghost{background:rgba(255,255,255,.08);color:#e2e8f0}.btn-ghost:hover{background:rgba(255,255,255,.15)}
-.btn-danger{background:rgba(154,44,44,.5);color:#fc8181}.btn-danger:hover{background:rgba(154,44,44,.8)}
-.btn-sm{padding:5px 10px;font-size:.8rem}
-.btn-xs{padding:3px 7px;font-size:.73rem}
+.btn-warn{background:#744210;color:#fbd38d}.btn-warn:hover{background:#5f370e}
+.btn-sm{padding:4px 10px;font-size:.78rem}
+.btn-xs{padding:3px 7px;font-size:.72rem}
 .btn:disabled{opacity:.5;cursor:not-allowed}
-
-/* ── Naming Config ── */
-.naming-card{background:#16213e;border-radius:12px;border:1px solid rgba(255,255,255,.08);margin-bottom:16px;overflow:hidden}
-.naming-header{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
-.naming-header:hover{background:rgba(255,255,255,.03)}
-.naming-toggle{font-size:.8rem;color:#718096}
-.naming-body{padding:16px;border-top:1px solid rgba(255,255,255,.06)}
-.naming-segments{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
-@media(max-width:680px){.naming-segments{grid-template-columns:1fr}}
-.naming-seg{background:rgba(0,0,0,.2);border-radius:8px;padding:10px}
-.naming-seg-title{font-size:.78rem;font-weight:700;color:#90cdf4;margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em}
-.naming-item{display:flex;align-items:center;gap:4px;margin-bottom:4px;padding:3px 4px;border-radius:4px;background:rgba(255,255,255,.04)}
-.naming-item input[type=checkbox]{accent-color:#63b3ed;width:14px;height:14px;flex-shrink:0}
-.naming-item-text{flex:1;font-size:.82rem;color:#e2e8f0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.naming-item-text.editing{background:transparent;border:none;border-bottom:1px solid #63b3ed;outline:none;color:#e2e8f0;width:100%;font-size:.82rem}
-.naming-item .move-btn{padding:1px 4px;font-size:.7rem;background:transparent;border:none;cursor:pointer;color:#718096}
-.naming-item .move-btn:hover{color:#e2e8f0}
-.naming-item .del-btn{padding:1px 5px;font-size:.7rem;background:transparent;border:none;cursor:pointer;color:#e53e3e;opacity:.7}
-.naming-item .del-btn:hover{opacity:1}
-.naming-add-row{display:flex;gap:4px;margin-top:6px}
-.naming-add-input{flex:1;padding:4px 7px;border-radius:4px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#e2e8f0;font-size:.8rem}
-.naming-add-input:focus{outline:none;border-color:#63b3ed}
-.naming-preview{background:rgba(0,0,0,.25);border-radius:6px;padding:8px 12px;font-size:.82rem;color:#a0aec0}
-.naming-preview strong{color:#f6e05e}
-
-/* ── Organizer ── */
-.group-card{background:#0f3460;border-radius:10px;border:1px solid rgba(255,255,255,.1);margin-bottom:14px;overflow:hidden}
-.group-header{padding:10px 14px;background:rgba(0,0,0,.2);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.group-index{background:#3182ce;color:#fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;flex-shrink:0}
-.group-time{font-size:.8rem;color:#a0aec0}
-.group-count{font-size:.8rem;color:#68d391}
-.group-name-input{padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#e2e8f0;font-size:.85rem;min-width:100px;max-width:140px}
+/* Per-group pills */
+.pill{padding:2px 8px;border-radius:20px;border:1px solid rgba(255,255,255,.15);background:transparent;color:#a0aec0;font-size:.72rem;cursor:pointer;transition:all .12s;white-space:nowrap}
+.pill:hover{border-color:#63b3ed;color:#e2e8f0}
+.pill.active{background:#3182ce;border-color:#3182ce;color:#fff}
+.pill.active.clinic{background:#2d6a4f;border-color:#2d6a4f}
+.group-pills-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:5px;font-size:.72rem}
+.pill-label{color:#718096;flex-shrink:0}
+/* Organizer */
+.group-card{background:#0f3460;border-radius:9px;border:1px solid rgba(255,255,255,.1);margin-bottom:12px;overflow:hidden}
+.group-header{padding:9px 12px;background:rgba(0,0,0,.2)}
+.group-row1{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.group-index{background:#3182ce;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:.76rem;font-weight:700;flex-shrink:0}
+.group-time{font-size:.78rem;color:#a0aec0}
+.group-count{font-size:.78rem;color:#68d391}
+.group-name-input{padding:3px 7px;border-radius:5px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#e2e8f0;font-size:.82rem;min-width:90px;max-width:130px}
 .group-name-input:focus{outline:none;border-color:#63b3ed}
-.folder-preview{font-size:.72rem;color:#90cdf4;background:rgba(49,130,206,.12);padding:2px 7px;border-radius:4px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.conf-warn{font-size:.75rem;color:#f6e05e;background:rgba(246,224,94,.12);padding:2px 6px;border-radius:4px;border:1px solid rgba(246,224,94,.25)}
-.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:7px;padding:10px}
-.photo-item{position:relative;border-radius:7px;overflow:hidden;cursor:pointer;aspect-ratio:1;background:#000}
+.folder-preview{font-size:.68rem;color:#90cdf4;background:rgba(49,130,206,.12);padding:2px 6px;border-radius:3px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:default}
+.conf-warn{font-size:.72rem;color:#f6e05e;background:rgba(246,224,94,.12);padding:1px 5px;border-radius:3px;border:1px solid rgba(246,224,94,.25)}
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px;padding:9px}
+.photo-item{position:relative;border-radius:6px;overflow:hidden;cursor:pointer;aspect-ratio:1;background:#000}
 .photo-item img{width:100%;height:100%;object-fit:cover;display:block}
 .photo-item.name-photo{outline:3px solid #f6e05e}
-.name-badge{position:absolute;top:3px;left:3px;background:#f6e05e;color:#000;font-size:.6rem;font-weight:700;padding:2px 4px;border-radius:3px}
+.name-badge{position:absolute;top:3px;left:3px;background:#f6e05e;color:#000;font-size:.58rem;font-weight:700;padding:1px 4px;border-radius:3px}
 .photo-item:hover img{opacity:.82}
-.photo-time{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.8));font-size:.58rem;color:#e2e8f0;padding:10px 3px 3px;text-align:center}
-.no-exif{position:absolute;top:3px;right:3px;background:#e53e3e;color:#fff;font-size:.58rem;padding:1px 3px;border-radius:2px}
-.step-badge{display:inline-block;background:#3182ce;color:#fff;border-radius:6px;padding:2px 8px;font-size:.75rem;font-weight:700;margin-right:6px}
-.settings-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:10px}
-.settings-row label{font-size:.85rem;color:#a0aec0}
-.settings-row input[type=number]{width:65px;padding:4px 7px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#e2e8f0;font-size:.85rem}
-.progress-bar{height:5px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden;margin-top:7px}
+.photo-time{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.8));font-size:.56rem;color:#e2e8f0;padding:9px 3px 2px;text-align:center}
+.no-exif{position:absolute;top:3px;right:3px;background:#e53e3e;color:#fff;font-size:.55rem;padding:1px 3px;border-radius:2px}
+.step-badge{display:inline-block;background:#3182ce;color:#fff;border-radius:5px;padding:2px 7px;font-size:.72rem;font-weight:700;margin-right:5px}
+.settings-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:9px}
+.settings-row label{font-size:.82rem;color:#a0aec0}
+.settings-row input[type=number]{width:62px;padding:4px 6px;border-radius:5px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#e2e8f0;font-size:.82rem}
+.progress-bar{height:5px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden;margin-top:6px}
 .progress-fill{height:100%;background:#3182ce;transition:width .3s}
-.ocr-status{font-size:.82rem;color:#90cdf4;background:rgba(49,130,206,.1);border:1px solid rgba(49,130,206,.2);border-radius:6px;padding:7px 12px;display:none;margin-bottom:8px}
-
-/* ── Editor ── */
-.edit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
-.edit-item{border-radius:10px;overflow:hidden;border:2px solid transparent;background:#0f3460;transition:border-color .15s;cursor:pointer}
+.ocr-status{font-size:.8rem;color:#90cdf4;background:rgba(49,130,206,.1);border:1px solid rgba(49,130,206,.2);border-radius:5px;padding:6px 10px;display:none;margin-bottom:8px}
+/* Editor */
+.edit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:9px}
+.edit-item{border-radius:9px;overflow:hidden;border:2px solid transparent;background:#0f3460;transition:border-color .15s;cursor:pointer}
 .edit-item.selected{border-color:#68d391}
 .edit-thumb-wrap{position:relative;aspect-ratio:1;background:#000;overflow:hidden}
 .edit-thumb-wrap img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .2s}
-.sel-badge{position:absolute;top:4px;left:4px;background:#68d391;color:#000;font-size:.68rem;font-weight:700;padding:2px 5px;border-radius:3px;display:none}
+.sel-badge{position:absolute;top:3px;left:3px;background:#68d391;color:#000;font-size:.65rem;font-weight:700;padding:1px 5px;border-radius:3px;display:none}
 .edit-item.selected .sel-badge{display:block}
-.edit-filename{font-size:.68rem;color:#a0aec0;padding:3px 6px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.edit-controls{padding:3px 4px 5px;display:none;gap:3px;flex-wrap:wrap;justify-content:center}
+.edit-filename{font-size:.65rem;color:#a0aec0;padding:3px 5px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.edit-controls{padding:2px 4px 5px;display:none;gap:3px;flex-wrap:wrap;justify-content:center}
 .edit-item.selected .edit-controls{display:flex}
-.edit-sel-count{font-size:.88rem;color:#68d391;font-weight:600}
-.person-input-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.person-input-row label{font-size:.85rem;color:#a0aec0;white-space:nowrap}
-.person-input-row input{padding:5px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#e2e8f0;font-size:.88rem;flex:1}
-.person-input-row input:focus{outline:none;border-color:#63b3ed}
-
+.edit-sel-count{font-size:.85rem;color:#68d391;font-weight:600}
 /* Common */
-.tip{background:rgba(99,179,237,.1);border:1px solid rgba(99,179,237,.2);border-radius:8px;padding:9px 13px;font-size:.8rem;color:#90cdf4;margin-bottom:12px}
-.browser-warn{background:rgba(229,62,62,.1);border:1px solid rgba(229,62,62,.3);border-radius:8px;padding:9px 13px;font-size:.8rem;color:#fc8181;margin-bottom:12px;display:none}
-.toast-container{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
-.toast{padding:9px 15px;border-radius:8px;font-size:.88rem;color:#fff;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none}
+.tip{background:rgba(99,179,237,.1);border:1px solid rgba(99,179,237,.2);border-radius:7px;padding:8px 12px;font-size:.78rem;color:#90cdf4;margin-bottom:10px}
+.browser-warn{background:rgba(229,62,62,.1);border:1px solid rgba(229,62,62,.3);border-radius:7px;padding:8px 12px;font-size:.78rem;color:#fc8181;margin-bottom:12px;display:none}
+.toast-container{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:7px}
+.toast{padding:8px 14px;border-radius:7px;font-size:.85rem;color:#fff;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none}
 .toast.show{opacity:1;transform:translateY(0)}
 .toast-success{background:#276749}.toast-error{background:#9b2c2c}.toast-info{background:#2c5282}
 </style>
 </head>
 <body>
-<div class="container">
+<div class="page">
   <h1>📸 照片工具</h1>
+  <div class="browser-warn" id="browserWarn">⚠️ 此瀏覽器不支援直接寫入資料夾，請改用 Chrome 或 Edge。</div>
 
-  <div class="browser-warn" id="browserWarn">
-    ⚠️ 此瀏覽器不支援直接寫入資料夾，請改用 Chrome 或 Edge。
-  </div>
+  <div class="layout">
 
-  <!-- ═══ 命名設定（共用）═══ -->
-  <div class="naming-card" id="namingCard">
-    <div class="naming-header" onclick="toggleNaming()">
-      <span style="font-size:.9rem;font-weight:600;color:#90cdf4">⚙️ 資料夾命名設定</span>
-      <span class="naming-toggle" id="namingToggle">▼ 展開</span>
-    </div>
-    <div class="naming-body" id="namingBody" style="display:none">
-      <div class="naming-segments" id="namingSegments"></div>
-      <div class="naming-preview">
-        預覽：<strong id="namingPreview">（請設定後查看）</strong>
-      </div>
-    </div>
-  </div>
-
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('organizer')">照片整理</button>
-    <button class="tab-btn" onclick="switchTab('editor')">照片編輯</button>
-  </div>
-
-  <!-- ═══ TAB 1: 照片整理 ═══ -->
-  <div class="tab-section active" id="tab-organizer">
-    <div class="card">
-      <div style="margin-bottom:12px"><span class="step-badge">1</span>選取資料夾</div>
-      <div class="upload-zone" onclick="selectFolder()">
-        <div class="upload-icon">📁</div>
-        <div class="upload-text" id="uploadText">點擊選取資料夾</div>
-        <div class="upload-hint">需要 Chrome 或 Edge・照片不會上傳，全部在本機處理</div>
-      </div>
-    </div>
-
-    <div class="card" id="settingsCard" style="display:none">
-      <div style="margin-bottom:10px"><span class="step-badge">2</span>分組設定</div>
-      <div class="settings-row">
-        <label>時間間隔門檻</label>
-        <input type="number" id="gapMinutes" value="20" min="1" max="120">
-        <span style="font-size:.85rem;color:#a0aec0">分鐘</span>
-        <button class="btn btn-ghost btn-sm" onclick="regroup()">重新分組</button>
-      </div>
-      <div id="loadingBar" style="display:none">
-        <div style="font-size:.82rem;color:#a0aec0;margin-bottom:4px" id="loadingText">讀取 EXIF 中...</div>
-        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
-      </div>
-    </div>
-
-    <div id="groupsSection" style="display:none">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-        <div><span class="step-badge">3</span>確認名字，可手動修改</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <span id="groupStats" style="font-size:.82rem;color:#a0aec0;line-height:2"></span>
-          <button class="btn btn-primary btn-sm" id="autoDetectBtn" onclick="autoDetect()">🔍 自動辨識</button>
-          <button class="btn btn-success" id="organizeBtn" onclick="organizeFiles()" disabled>✅ 整理到資料夾</button>
+    <!-- ═══ SIDEBAR: 命名設定 ═══ -->
+    <div class="sidebar">
+      <div class="sidebar-card">
+        <div class="sidebar-title">
+          <span>⚙️ 命名設定</span>
+          <button class="btn btn-ghost btn-xs" onclick="exportNaming()" title="匯出設定">↓ 匯出</button>
         </div>
-      </div>
-      <div class="ocr-status" id="ocrStatus"></div>
-      <div class="tip">💡 點選照片切換名字照・⚠ 表示辨識信心較低，請確認・未填人名自動以日期時間命名</div>
-      <div id="groupsList"></div>
-    </div>
-  </div>
 
-  <!-- ═══ TAB 2: 照片編輯 ═══ -->
-  <div class="tab-section" id="tab-editor">
-    <div class="card">
-      <div style="margin-bottom:12px"><span class="step-badge">1</span>選取資料夾</div>
-      <div class="upload-zone" onclick="selectEditFolder()">
-        <div class="upload-icon">🖼️</div>
-        <div class="upload-text" id="editUploadText">點擊選取要編輯的資料夾</div>
-        <div class="upload-hint">需要 Chrome 或 Edge</div>
+        <!-- 前綴 -->
+        <div class="ns-seg">
+          <div class="ns-seg-label">前綴（可複選）</div>
+          <div id="nsItems_prefix"></div>
+          <div class="ns-add-row">
+            <input class="ns-add-input" id="nsAdd_prefix" placeholder="新增前綴..." onkeydown="if(event.key==='Enter')nsAdd('prefix')">
+            <button class="btn btn-ghost btn-xs" onclick="nsAdd('prefix')">+</button>
+          </div>
+        </div>
+
+        <!-- 診所名 -->
+        <div class="ns-seg">
+          <div class="ns-seg-label">診所名（單選）</div>
+          <div id="nsItems_clinic"></div>
+          <div class="ns-add-row">
+            <input class="ns-add-input" id="nsAdd_clinic" placeholder="新增診所..." onkeydown="if(event.key==='Enter')nsAdd('clinic')">
+            <button class="btn btn-ghost btn-xs" onclick="nsAdd('clinic')">+</button>
+          </div>
+        </div>
+
+        <!-- 後綴 -->
+        <div class="ns-seg">
+          <div class="ns-seg-label">後綴（可複選）</div>
+          <div id="nsItems_suffix"></div>
+          <div class="ns-add-row">
+            <input class="ns-add-input" id="nsAdd_suffix" placeholder="新增後綴..." onkeydown="if(event.key==='Enter')nsAdd('suffix')">
+            <button class="btn btn-ghost btn-xs" onclick="nsAdd('suffix')">+</button>
+          </div>
+        </div>
+
+        <div class="ns-preview">格式：<strong>（前綴）診所名 - 人名（後綴）</strong><br>每組可各自選取不同項目</div>
       </div>
     </div>
 
-    <div id="editSection" style="display:none">
-      <div class="card">
-        <div style="margin-bottom:10px"><span class="step-badge">2</span>設定儲存資料夾名稱</div>
-        <div class="person-input-row">
-          <label>人名</label>
-          <input type="text" id="editPersonName" placeholder="輸入人名（套用命名設定）" oninput="updateEditFolderPreview()">
-        </div>
-        <div class="naming-preview">
-          儲存到：<strong id="editFolderPreview">（請輸入人名或設定命名）</strong>
-        </div>
+    <!-- ═══ MAIN CONTENT ═══ -->
+    <div class="main">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('organizer')">照片整理</button>
+        <button class="tab-btn" onclick="switchTab('editor')">照片編輯</button>
       </div>
 
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-        <div><span class="step-badge">3</span>點選照片（最多14張），調整旋轉/鏡像</div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <span class="edit-sel-count" id="editSelCount">已選 0 / 14</span>
-          <button class="btn btn-ghost btn-sm" onclick="clearEditSelection()">清除選取</button>
-          <button class="btn btn-success" id="saveEditBtn" onclick="saveEditPhotos()" disabled>💾 儲存選取照片</button>
+      <!-- TAB 1: 照片整理 -->
+      <div class="tab-section active" id="tab-organizer">
+
+        <div class="card">
+          <div style="margin-bottom:10px"><span class="step-badge">1</span>選取資料夾</div>
+          <div class="upload-zone" onclick="selectFolder()">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text" id="uploadText">點擊選取資料夾</div>
+            <div class="upload-hint">需要 Chrome 或 Edge・照片不會上傳</div>
+          </div>
         </div>
-      </div>
-      <div class="tip">💡 點照片選取 → 選取後出現旋轉/鏡像按鈕 → 縮圖即時預覽 → 儲存到上方設定的資料夾</div>
-      <div class="edit-grid" id="editGrid"></div>
-    </div>
-  </div>
+
+        <div class="card" id="settingsCard" style="display:none">
+          <div style="margin-bottom:9px"><span class="step-badge">2</span>分組設定</div>
+          <div class="settings-row">
+            <label>時間間隔</label>
+            <input type="number" id="gapMinutes" value="20" min="1" max="120">
+            <span style="font-size:.82rem;color:#a0aec0">分鐘</span>
+            <button class="btn btn-ghost btn-sm" onclick="regroup()">重新分組</button>
+          </div>
+          <div id="loadingBar" style="display:none">
+            <div style="font-size:.8rem;color:#a0aec0;margin-bottom:4px" id="loadingText">讀取 EXIF 中...</div>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <div id="groupsSection" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:7px">
+            <div><span class="step-badge">3</span>確認名字</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+              <span id="groupStats" style="font-size:.8rem;color:#a0aec0;line-height:2"></span>
+              <button class="btn btn-primary btn-sm" id="autoDetectBtn" onclick="autoDetect()">🔍 自動辨識</button>
+              <button class="btn btn-success btn-sm" id="organizeBtn" onclick="organizeFiles('named')" disabled>✅ 整理（已選名字照）</button>
+              <button class="btn btn-warn btn-sm" id="organizeUnnamedBtn" onclick="organizeFiles('unnamed')" disabled>📁 整理（未選名字照）</button>
+            </div>
+          </div>
+          <div class="ocr-status" id="ocrStatus"></div>
+          <div class="tip">💡 點照片標記名字照・每組可個別選前綴/診所/後綴・⚠ 表示辨識信心較低</div>
+          <div id="groupsList"></div>
+        </div>
+
+      </div><!-- /tab-organizer -->
+
+      <!-- TAB 2: 照片編輯 -->
+      <div class="tab-section" id="tab-editor">
+
+        <div class="card">
+          <div style="margin-bottom:10px"><span class="step-badge">1</span>選取資料夾</div>
+          <div class="upload-zone" onclick="selectEditFolder()">
+            <div class="upload-icon">🖼️</div>
+            <div class="upload-text" id="editUploadText">點擊選取要編輯的資料夾</div>
+            <div class="upload-hint">需要 Chrome 或 Edge</div>
+          </div>
+        </div>
+
+        <div id="editSection" style="display:none">
+          <div class="card">
+            <div style="margin-bottom:9px"><span class="step-badge">2</span>設定儲存資料夾名稱</div>
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:9px;flex-wrap:wrap">
+              <label style="font-size:.82rem;color:#a0aec0;white-space:nowrap">人名</label>
+              <input type="text" id="editPersonName" placeholder="輸入人名" oninput="updateEditPreview()"
+                style="flex:1;padding:5px 9px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#e2e8f0;font-size:.85rem;min-width:120px">
+            </div>
+            <!-- per-save pills -->
+            <div id="editPills" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px"></div>
+            <div style="font-size:.78rem;color:#a0aec0">
+              儲存到：<strong id="editFolderPreview" style="color:#f6e05e">（請輸入人名）</strong>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:7px">
+            <div><span class="step-badge">3</span>點選照片（最多14張），調整旋轉/鏡像</div>
+            <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">
+              <span class="edit-sel-count" id="editSelCount">已選 0 / 14</span>
+              <button class="btn btn-ghost btn-sm" onclick="clearEditSelection()">清除</button>
+              <button class="btn btn-success btn-sm" id="saveEditBtn" onclick="saveEditPhotos()" disabled>💾 儲存</button>
+            </div>
+          </div>
+          <div class="tip">💡 點照片選取 → 旋轉/鏡像按鈕出現 → 儲存到上方資料夾</div>
+          <div class="edit-grid" id="editGrid"></div>
+        </div>
+
+      </div><!-- /tab-editor -->
+
+    </div><!-- /main -->
+  </div><!-- /layout -->
 
   <div class="toast-container" id="toastContainer"></div>
 </div>
 
 <script>
-// ═══════════════════════════════════════
+// ════════════════════════════════
 //  SHARED UTILS
-// ═══════════════════════════════════════
+// ════════════════════════════════
 function switchTab(name) {
-  ['organizer','editor'].forEach((n,i) => {
-    document.querySelectorAll('.tab-btn')[i].classList.toggle('active', n===name);
-    document.getElementById('tab-'+n).classList.toggle('active', n===name);
+  ['organizer','editor'].forEach((n,i)=>{
+    document.querySelectorAll('.tab-btn')[i].classList.toggle('active',n===name);
+    document.getElementById('tab-'+n).classList.toggle('active',n===name);
   });
 }
-
 if (!window.showDirectoryPicker) document.getElementById('browserWarn').style.display='block';
-
-function escHtml(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtTime(t,short=false){
+  if(!t)return'-';const d=new Date(t);if(isNaN(d))return'-';
+  const p=n=>String(n).padStart(2,'0');
+  return short?`${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`
+    :`${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
-function fmtTime(t, short=false) {
-  if (!t) return '-';
-  const d = new Date(t); if (isNaN(d)) return '-';
-  const p = n => String(n).padStart(2,'0');
-  if (short) return `${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;
-  return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;
-}
-function toast(msg, type='info') {
-  const c=document.getElementById('toastContainer'), t=document.createElement('div');
-  t.className=`toast toast-${type}`; t.textContent=msg; c.appendChild(t);
+function toast(msg,type='info'){
+  const c=document.getElementById('toastContainer'),t=document.createElement('div');
+  t.className=`toast toast-${type}`;t.textContent=msg;c.appendChild(t);
   requestAnimationFrame(()=>t.classList.add('show'));
   setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),300);},3500);
 }
 
-// ═══════════════════════════════════════
-//  NAMING CONFIG (shared)
-// ═══════════════════════════════════════
-// 3 configurable segments: prefix, clinic, suffix
-// 人名 is dynamic per group/edit session
+// ════════════════════════════════
+//  NAMING CONFIG — library only
+//  Selection is per-group (stored in group.sel*)
+// ════════════════════════════════
 let namingConfig = {
-  prefix: [],   // [{text, checked}]
-  clinic: [],   // [{text, checked}]
-  suffix: [],   // [{text, checked}]
+  prefix: [],  // [{text}]
+  clinic: [],  // [{text}]
+  suffix: [],  // [{text}]
 };
-let namingOpen = false;
 
-const SEG_META = [
-  { key:'prefix', label:'前綴' },
-  { key:'clinic', label:'診所名' },
-  { key:'suffix', label:'後綴' },
-];
-
-function toggleNaming() {
-  namingOpen = !namingOpen;
-  document.getElementById('namingBody').style.display = namingOpen ? 'block' : 'none';
-  document.getElementById('namingToggle').textContent = namingOpen ? '▲ 收合' : '▼ 展開';
-  if (namingOpen) renderNamingPanel();
-}
-
-function renderNamingPanel() {
-  const container = document.getElementById('namingSegments');
-  container.innerHTML = SEG_META.map(({ key, label }) => {
-    const items = namingConfig[key];
-    const isClinic = key === 'clinic';
-    const inputType = isClinic ? 'radio' : 'checkbox';
-    const itemsHtml = items.map((item, i) => `
-      <div class="naming-item">
-        <input type="${inputType}" name="clinic_radio" ${item.checked?'checked':''} onchange="namingToggleItem('${key}',${i},this.checked)">
-        <span class="naming-item-text" title="${escHtml(item.text)}">${escHtml(item.text)}</span>
-        <button class="move-btn" onclick="namingMoveItem('${key}',${i},-1)" ${i===0?'disabled':''}>▲</button>
-        <button class="move-btn" onclick="namingMoveItem('${key}',${i},1)" ${i===items.length-1?'disabled':''}>▼</button>
-        <button class="del-btn" onclick="namingDelItem('${key}',${i})">✕</button>
+function renderSidebar() {
+  ['prefix','clinic','suffix'].forEach(key => {
+    const el = document.getElementById(`nsItems_${key}`);
+    if (!el) return;
+    el.innerHTML = namingConfig[key].map((item,i) => `
+      <div class="ns-item">
+        <span class="ns-item-text" title="${escHtml(item.text)}">${escHtml(item.text)}</span>
+        <button onclick="nsMove('${key}',${i},-1)" ${i===0?'disabled':''}>▲</button>
+        <button onclick="nsMove('${key}',${i},1)" ${i===namingConfig[key].length-1?'disabled':''}>▼</button>
+        <button class="del" onclick="nsDel('${key}',${i})">✕</button>
       </div>`).join('');
-    return `<div class="naming-seg">
-      <div class="naming-seg-title">${label}</div>
-      <div id="nsItems_${key}">${itemsHtml}</div>
-      <div class="naming-add-row">
-        <input class="naming-add-input" id="nsAdd_${key}" placeholder="新增項目..." onkeydown="if(event.key==='Enter')namingAddItem('${key}')">
-        <button class="btn btn-ghost btn-xs" onclick="namingAddItem('${key}')">+ 新增</button>
-      </div>
-    </div>`;
-  }).join('');
-  updateNamingPreview();
+  });
+  // Refresh all group pills and edit pills
+  groups.forEach((_,gi) => updateGroupPillsUI(gi));
+  renderEditPills();
 }
 
-window.namingToggleItem = function(key, i, checked) {
-  if (key === 'clinic' && checked) {
-    // single-select: uncheck all others first
-    namingConfig.clinic.forEach((item, j) => { item.checked = j === i; });
-  } else {
-    namingConfig[key][i].checked = checked;
-  }
-  renderNamingPanel();
-  refreshGroupFolderPreviews();
-  updateEditFolderPreview();
+window.nsAdd = function(key) {
+  const input=document.getElementById(`nsAdd_${key}`);
+  const text=input.value.trim(); if(!text) return;
+  namingConfig[key].push({text}); input.value='';
+  renderSidebar();
 };
-window.namingMoveItem = function(key, i, dir) {
-  const arr = namingConfig[key];
-  const j = i + dir;
-  if (j < 0 || j >= arr.length) return;
-  [arr[i], arr[j]] = [arr[j], arr[i]];
-  renderNamingPanel();
-  refreshGroupFolderPreviews();
-  updateEditFolderPreview();
+window.nsMove = function(key,i,dir) {
+  const arr=namingConfig[key], j=i+dir;
+  if(j<0||j>=arr.length) return;
+  [arr[i],arr[j]]=[arr[j],arr[i]]; renderSidebar();
 };
-window.namingDelItem = function(key, i) {
-  namingConfig[key].splice(i, 1);
-  renderNamingPanel();
-  refreshGroupFolderPreviews();
-  updateEditFolderPreview();
-};
-window.namingAddItem = function(key) {
-  const input = document.getElementById(`nsAdd_${key}`);
-  const text = input.value.trim();
-  if (!text) return;
-  namingConfig[key].push({ text, checked: true });
-  input.value = '';
-  renderNamingPanel();
-  refreshGroupFolderPreviews();
-  updateEditFolderPreview();
+window.nsDel = function(key,i) {
+  namingConfig[key].splice(i,1);
+  // Clean up group selections that pointed to this index
+  groups.forEach(g=>{
+    if(key==='prefix') g.selPrefix.delete(i);
+    if(key==='clinic' && g.selClinic===i) g.selClinic=null;
+    if(key==='suffix') g.selSuffix.delete(i);
+  });
+  if(key==='clinic' && editState.selClinic===i) editState.selClinic=null;
+  renderSidebar(); updateEditPreview();
 };
 
-function buildFolderName(personName) {
-  const selArr = arr => arr.filter(i=>i.checked).map(i=>i.text);
-  const prefixParts = selArr(namingConfig.prefix);
-  const clinicParts = selArr(namingConfig.clinic);  // single-select, max 1
-  const suffixParts = selArr(namingConfig.suffix);
-  const prefix = prefixParts.length ? `（${prefixParts.join(' ')}）` : '';
-  const clinic = clinicParts[0] || '';
-  const suffix = suffixParts.length ? `（${suffixParts.join(' ')}）` : '';
-  let name = prefix;
-  if (clinic && personName) name += clinic + ' - ' + personName;
-  else if (clinic) name += clinic;
+function exportNaming() {
+  const json=JSON.stringify(namingConfig,null,2);
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([json],{type:'application/json'}));
+  a.download='naming-config.json'; a.click();
+}
+
+function buildFolderName(personName, selPrefix, selClinic, selSuffix) {
+  // selPrefix = Set of indices, selClinic = index|null, selSuffix = Set of indices
+  const prefParts = namingConfig.prefix.filter((_,i)=>(selPrefix||new Set()).has(i)).map(x=>x.text);
+  const clinicName = selClinic!=null ? (namingConfig.clinic[selClinic]?.text||'') : '';
+  const sufParts = namingConfig.suffix.filter((_,i)=>(selSuffix||new Set()).has(i)).map(x=>x.text);
+  const pre = prefParts.length ? `（${prefParts.join(' ')}）` : '';
+  const suf = sufParts.length ? `（${sufParts.join(' ')}）` : '';
+  let name = pre;
+  if (clinicName && personName) name += clinicName+' - '+personName;
+  else if (clinicName) name += clinicName;
   else if (personName) name += personName;
-  name += suffix;
+  name += suf;
   return name.trim();
 }
 
-function updateNamingPreview() {
-  const preview = buildFolderName('人名') || '（未勾選任何項目）';
-  document.getElementById('namingPreview').textContent = preview;
-}
-
-function refreshGroupFolderPreviews() {
-  groups.forEach((g, gi) => {
-    const el = document.getElementById(`fp_${gi}`);
-    if (el) el.textContent = buildFolderName(g.personName.trim() || autoGroupName(g));
-  });
-}
-
-function updateEditFolderPreview() {
-  const personName = document.getElementById('editPersonName')?.value.trim() || '';
-  const preview = buildFolderName(personName) || personName || '（請輸入人名或設定命名）';
-  const el = document.getElementById('editFolderPreview');
-  if (el) el.textContent = preview;
-}
-
-// ═══════════════════════════════════════
+// ════════════════════════════════
 //  TAB 1 — 照片整理
-// ═══════════════════════════════════════
+// ════════════════════════════════
 let allFiles=[], groups=[], dirHandle=null, ocrWorker=null;
 
 async function selectFolder() {
-  if (!window.showDirectoryPicker) { toast('請使用 Chrome 或 Edge','error'); return; }
-  try { dirHandle = await window.showDirectoryPicker({ mode:'readwrite' }); }
-  catch(e) { if (e.name!=='AbortError') toast('無法開啟資料夾：'+e.message,'error'); return; }
-  document.getElementById('uploadText').textContent = `已選取：${dirHandle.name}`;
+  if(!window.showDirectoryPicker){toast('請使用 Chrome 或 Edge','error');return;}
+  try{dirHandle=await window.showDirectoryPicker({mode:'readwrite'});}
+  catch(e){if(e.name!=='AbortError')toast('無法開啟：'+e.message,'error');return;}
+  document.getElementById('uploadText').textContent=`已選取：${dirHandle.name}`;
   const imgs=[];
-  for await (const [name,handle] of dirHandle) {
-    if (handle.kind!=='file') continue;
-    if (!/\.(jpe?g|png|heic|heif|webp|bmp|gif|tiff?)$/i.test(name)) continue;
+  for await(const[name,handle]of dirHandle){
+    if(handle.kind!=='file')continue;
+    if(!/\.(jpe?g|png|heic|heif|webp|bmp|gif|tiff?)$/i.test(name))continue;
     imgs.push(await handle.getFile());
   }
-  if (!imgs.length) { toast('資料夾內沒有找到圖片','error'); return; }
+  if(!imgs.length){toast('沒有找到圖片','error');return;}
   await processFiles(imgs);
 }
 
@@ -392,18 +373,17 @@ async function processFiles(imgs) {
   document.getElementById('settingsCard').style.display='block';
   document.getElementById('loadingBar').style.display='block';
   document.getElementById('groupsSection').style.display='none';
-  allFiles = imgs.map((f,i)=>({file:f,name:f.name,time:null,idx:i}));
-  const bar=document.getElementById('progressFill'), txt=document.getElementById('loadingText');
+  allFiles=imgs.map((f,i)=>({file:f,name:f.name,time:null,idx:i}));
+  const bar=document.getElementById('progressFill'),txt=document.getElementById('loadingText');
   let done=0;
-  for (let i=0;i<allFiles.length;i+=20) {
+  for(let i=0;i<allFiles.length;i+=20){
     await Promise.all(allFiles.slice(i,i+20).map(async item=>{
-      try {
+      try{
         const exif=await exifr.parse(item.file,['DateTimeOriginal','CreateDate','DateTime']);
         item.time=exif?.DateTimeOriginal||exif?.CreateDate||exif?.DateTime||null;
-        if (!item.time) { item.time=new Date(item.file.lastModified); item.noExif=true; }
-      } catch(e) { item.time=new Date(item.file.lastModified); item.noExif=true; }
-      done++;
-      bar.style.width=Math.round(done/allFiles.length*100)+'%';
+        if(!item.time){item.time=new Date(item.file.lastModified);item.noExif=true;}
+      }catch(e){item.time=new Date(item.file.lastModified);item.noExif=true;}
+      done++;bar.style.width=Math.round(done/allFiles.length*100)+'%';
       txt.textContent=`讀取 EXIF 中... ${done}/${allFiles.length}`;
     }));
   }
@@ -414,55 +394,69 @@ async function processFiles(imgs) {
 }
 
 function regroup() {
-  if (!allFiles.length) return;
+  if(!allFiles.length)return;
   const gap=(parseInt(document.getElementById('gapMinutes').value)||20)*60000;
   groups=[];
-  let cur={photos:[allFiles[0]],namePhotoIdx:null,personName:'',lowConf:false};
-  for (let i=1;i<allFiles.length;i++) {
-    if (new Date(allFiles[i].time)-new Date(allFiles[i-1].time)>gap) {
-      groups.push(cur); cur={photos:[allFiles[i]],namePhotoIdx:null,personName:'',lowConf:false};
-    } else cur.photos.push(allFiles[i]);
+  let cur={photos:[allFiles[0]],namePhotoIdx:null,personName:'',lowConf:false,
+    selPrefix:new Set(),selClinic:null,selSuffix:new Set()};
+  for(let i=1;i<allFiles.length;i++){
+    if(new Date(allFiles[i].time)-new Date(allFiles[i-1].time)>gap){
+      groups.push(cur);
+      cur={photos:[allFiles[i]],namePhotoIdx:null,personName:'',lowConf:false,
+        selPrefix:new Set(),selClinic:null,selSuffix:new Set()};
+    }else cur.photos.push(allFiles[i]);
   }
   groups.push(cur);
   renderGroups();
 }
 
 function autoGroupName(g) {
-  const d=new Date(g.photos[0]?.time); if(isNaN(d)) return '未知時間';
+  const d=new Date(g.photos[0]?.time);if(isNaN(d))return'未知時間';
   const p=n=>String(n).padStart(2,'0');
-  return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
+  return`${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
+}
+
+function groupFolderName(g) {
+  const pName=g.personName.trim()||autoGroupName(g);
+  return buildFolderName(pName,g.selPrefix,g.selClinic,g.selSuffix)||pName;
 }
 
 function renderGroups() {
   document.getElementById('groupsSection').style.display='block';
-  updateDownloadBtn();
-  document.getElementById('groupsList').innerHTML = groups.map((g,gi)=>{
-    const first=g.photos[0], last=g.photos[g.photos.length-1];
-    const folderName = buildFolderName(g.personName.trim()||autoGroupName(g)) || autoGroupName(g);
-    return `<div class="group-card" id="gc_${gi}">
-      <div class="group-header" id="gh_${gi}">
-        <div class="group-index">${gi+1}</div>
-        <div class="group-time">${fmtTime(first?.time)} ~ ${fmtTime(last?.time)}</div>
-        <div class="group-count">${g.photos.length} 張</div>
-        <input class="group-name-input" placeholder="人名" value="${escHtml(g.personName)}"
-          oninput="groups[${gi}].personName=this.value;groups[${gi}].lowConf=false;updateGroupFolderPreview(${gi});updateDownloadBtn()"
-          id="nameInput_${gi}">
-        <div class="folder-preview" id="fp_${gi}" title="${escHtml(folderName)}">${escHtml(folderName)}</div>
-        ${g.lowConf?'<span class="conf-warn">⚠ 請確認</span>':''}
+  updateOrgBtns();
+  document.getElementById('groupsList').innerHTML=groups.map((g,gi)=>{
+    const first=g.photos[0],last=g.photos[g.photos.length-1];
+    const fn=groupFolderName(g);
+    return`<div class="group-card" id="gc_${gi}">
+      <div class="group-header">
+        <div class="group-row1">
+          <div class="group-index">${gi+1}</div>
+          <div class="group-time">${fmtTime(first?.time,true)} ~ ${fmtTime(last?.time,true)}</div>
+          <div class="group-count">${g.photos.length} 張</div>
+          <input class="group-name-input" placeholder="人名" value="${escHtml(g.personName)}"
+            oninput="groups[${gi}].personName=this.value;groups[${gi}].lowConf=false;updateGroupPreview(${gi});updateOrgBtns()"
+            id="nameInput_${gi}">
+          <div class="folder-preview" id="fp_${gi}" title="${escHtml(fn)}">${escHtml(fn)}</div>
+          ${g.lowConf?'<span class="conf-warn">⚠ 請確認</span>':''}
+        </div>
+        <div id="gpills_${gi}"></div>
       </div>
       <div class="photo-grid" id="grid_${gi}">
         ${g.photos.map((p,pi)=>buildThumb(p,gi,pi,g.namePhotoIdx===pi)).join('')}
       </div>
     </div>`;
   }).join('');
-  groups.forEach((g,gi)=>g.photos.forEach((p,pi)=>{
-    const img=document.getElementById(`thumb_${gi}_${pi}`);
-    if (img) img.src=URL.createObjectURL(p.file);
-  }));
+  groups.forEach((g,gi)=>{
+    updateGroupPillsUI(gi);
+    g.photos.forEach((p,pi)=>{
+      const img=document.getElementById(`thumb_${gi}_${pi}`);
+      if(img)img.src=URL.createObjectURL(p.file);
+    });
+  });
 }
 
-function buildThumb(p,gi,pi,isName) {
-  return `<div class="photo-item${isName?' name-photo':''}" id="pi_${gi}_${pi}" onclick="toggleNamePhoto(${gi},${pi})">
+function buildThumb(p,gi,pi,isName){
+  return`<div class="photo-item${isName?' name-photo':''}" id="pi_${gi}_${pi}" onclick="toggleNamePhoto(${gi},${pi})">
     <img id="thumb_${gi}_${pi}" loading="lazy">
     ${isName?'<div class="name-badge">名字</div>':''}
     ${p.noExif?'<div class="no-exif">無EXIF</div>':''}
@@ -470,154 +464,235 @@ function buildThumb(p,gi,pi,isName) {
   </div>`;
 }
 
-window.toggleNamePhoto = function(gi,pi) {
+window.toggleNamePhoto=function(gi,pi){
   const g=groups[gi];
   g.namePhotoIdx=(g.namePhotoIdx===pi)?null:pi;
   const grid=document.getElementById(`grid_${gi}`);
   grid.innerHTML=g.photos.map((p,idx)=>buildThumb(p,gi,idx,g.namePhotoIdx===idx)).join('');
   g.photos.forEach((p,idx)=>{
     const img=document.getElementById(`thumb_${gi}_${idx}`);
-    if (img&&!img.src) img.src=URL.createObjectURL(p.file);
+    if(img&&!img.src)img.src=URL.createObjectURL(p.file);
   });
-  if (g.namePhotoIdx!==null) { const inp=document.getElementById('nameInput_'+gi); if(inp&&!inp.value.trim()) inp.focus(); }
-  updateDownloadBtn();
+  if(g.namePhotoIdx!==null){const inp=document.getElementById('nameInput_'+gi);if(inp&&!inp.value.trim())inp.focus();}
+  updateOrgBtns();
 };
 
-function updateGroupFolderPreview(gi) {
+function updateGroupPillsUI(gi) {
+  const container=document.getElementById(`gpills_${gi}`);
+  if(!container)return;
   const g=groups[gi];
-  const el=document.getElementById(`fp_${gi}`);
-  if (!el) return;
-  const name=buildFolderName(g.personName.trim()||autoGroupName(g))||autoGroupName(g);
-  el.textContent=name; el.title=name;
+  const hasPills=namingConfig.prefix.length||namingConfig.clinic.length||namingConfig.suffix.length;
+  if(!hasPills){container.innerHTML='';return;}
+  let html='<div class="group-pills-row">';
+  if(namingConfig.prefix.length){
+    html+=`<span class="pill-label">前綴</span>`;
+    namingConfig.prefix.forEach((item,i)=>{
+      html+=`<button class="pill${g.selPrefix.has(i)?' active':''}" onclick="toggleGroupPrefix(${gi},${i})">${escHtml(item.text)}</button>`;
+    });
+  }
+  if(namingConfig.clinic.length){
+    html+=`<span class="pill-label" style="margin-left:4px">診所</span>`;
+    namingConfig.clinic.forEach((item,i)=>{
+      html+=`<button class="pill clinic${g.selClinic===i?' active clinic':''}" onclick="toggleGroupClinic(${gi},${i})">${escHtml(item.text)}</button>`;
+    });
+  }
+  if(namingConfig.suffix.length){
+    html+=`<span class="pill-label" style="margin-left:4px">後綴</span>`;
+    namingConfig.suffix.forEach((item,i)=>{
+      html+=`<button class="pill${g.selSuffix.has(i)?' active':''}" onclick="toggleGroupSuffix(${gi},${i})">${escHtml(item.text)}</button>`;
+    });
+  }
+  html+='</div>';
+  container.innerHTML=html;
 }
 
-function updateDownloadBtn() {
+window.toggleGroupPrefix=function(gi,i){
+  const g=groups[gi];
+  if(g.selPrefix.has(i))g.selPrefix.delete(i);else g.selPrefix.add(i);
+  updateGroupPillsUI(gi);updateGroupPreview(gi);
+};
+window.toggleGroupClinic=function(gi,i){
+  const g=groups[gi];
+  g.selClinic=(g.selClinic===i)?null:i;
+  updateGroupPillsUI(gi);updateGroupPreview(gi);
+};
+window.toggleGroupSuffix=function(gi,i){
+  const g=groups[gi];
+  if(g.selSuffix.has(i))g.selSuffix.delete(i);else g.selSuffix.add(i);
+  updateGroupPillsUI(gi);updateGroupPreview(gi);
+};
+
+function updateGroupPreview(gi){
+  const el=document.getElementById(`fp_${gi}`);if(!el)return;
+  const fn=groupFolderName(groups[gi]);
+  el.textContent=fn;el.title=fn;
+}
+
+function updateOrgBtns() {
+  const hasNamed=groups.some(g=>g.namePhotoIdx!==null);
+  const hasUnnamed=groups.some(g=>g.namePhotoIdx===null);
+  document.getElementById('organizeBtn').disabled=!hasNamed;
+  document.getElementById('organizeUnnamedBtn').disabled=!hasUnnamed;
   const named=groups.filter(g=>g.personName.trim()).length;
   const stats=document.getElementById('groupStats');
-  if (stats) stats.textContent=`${groups.length} 組 | 已命名 ${named} 組`;
-  const btn=document.getElementById('organizeBtn');
-  if (btn) btn.disabled=groups.length===0;
+  if(stats)stats.textContent=`${groups.length} 組 | 已命名 ${named} 組`;
 }
 
 // OCR
-async function ensureWorker(onProgress) {
-  if (ocrWorker) return ocrWorker;
+async function ensureWorker(onProgress){
+  if(ocrWorker)return ocrWorker;
   ocrWorker=await Tesseract.createWorker('chi_tra',1,{
-    logger:m=>{ if(m.status==='loading tesseract core'||m.status==='loading language traineddata') onProgress(`載入 OCR 語言包 ${Math.round((m.progress||0)*100)}%`); }
-  });
-  return ocrWorker;
+    logger:m=>{if(m.status==='loading tesseract core'||m.status==='loading language traineddata')onProgress(`載入 OCR 語言包 ${Math.round((m.progress||0)*100)}%`);}
+  });return ocrWorker;
 }
-function extractName(data) {
-  if (data.words?.length) {
+function extractName(data){
+  if(data.words?.length){
     const cands=data.words.map(w=>({text:w.text.replace(/[^\u4e00-\u9fff]/g,''),conf:w.confidence}))
       .filter(w=>w.text.length>=2&&w.text.length<=4&&w.conf>30).sort((a,b)=>b.conf-a.conf);
-    if (cands.length) return cands[0];
+    if(cands.length)return cands[0];
   }
   const m=(data.text||'').match(/[\u4e00-\u9fff]{2,4}/);
-  if (m) return {text:m[0],conf:data.confidence||0};
+  if(m)return{text:m[0],conf:data.confidence||0};
   return null;
 }
-async function autoDetect() {
-  const btn=document.getElementById('autoDetectBtn'), statusEl=document.getElementById('ocrStatus');
-  btn.disabled=true; statusEl.style.display='block'; statusEl.textContent='初始化 OCR...';
-  try {
+async function autoDetect(){
+  const btn=document.getElementById('autoDetectBtn'),statusEl=document.getElementById('ocrStatus');
+  btn.disabled=true;statusEl.style.display='block';statusEl.textContent='初始化 OCR...';
+  try{
     const worker=await ensureWorker(msg=>{statusEl.textContent=msg;});
-    for (let gi=0;gi<groups.length;gi++) {
+    for(let gi=0;gi<groups.length;gi++){
       const g=groups[gi];
-      if (g.personName.trim()&&!g.lowConf) continue;
+      if(g.personName.trim()&&!g.lowConf)continue;
       statusEl.textContent=`辨識中... 第 ${gi+1}/${groups.length} 組`;
       let bestName=null,bestIdx=null,bestConf=0;
-      for (let pi=0;pi<g.photos.length;pi++) {
-        try {
-          const {data}=await worker.recognize(g.photos[pi].file);
+      for(let pi=0;pi<g.photos.length;pi++){
+        try{
+          const{data}=await worker.recognize(g.photos[pi].file);
           const cand=extractName(data);
-          if (cand&&cand.conf>bestConf) { bestConf=cand.conf; bestName=cand.text; bestIdx=pi; }
-        } catch(e) {}
+          if(cand&&cand.conf>bestConf){bestConf=cand.conf;bestName=cand.text;bestIdx=pi;}
+        }catch(e){}
       }
-      if (bestName) {
-        g.personName=bestName; g.namePhotoIdx=bestIdx; g.lowConf=bestConf<70;
-        const input=document.getElementById(`nameInput_${gi}`);
-        if (input) input.value=bestName;
+      if(bestName){
+        g.personName=bestName;g.namePhotoIdx=bestIdx;g.lowConf=bestConf<70;
+        const input=document.getElementById(`nameInput_${gi}`);if(input)input.value=bestName;
         const grid=document.getElementById(`grid_${gi}`);
-        if (grid) {
+        if(grid){
           grid.innerHTML=g.photos.map((p,idx)=>buildThumb(p,gi,idx,g.namePhotoIdx===idx)).join('');
           g.photos.forEach((p,idx)=>{const img=document.getElementById(`thumb_${gi}_${idx}`);if(img)img.src=URL.createObjectURL(p.file);});
         }
-        updateGroupFolderPreview(gi);
-        const header=document.getElementById(`gh_${gi}`);
-        if (header) {
-          header.querySelectorAll('.conf-warn').forEach(el=>el.remove());
-          if (g.lowConf) { const b=document.createElement('span'); b.className='conf-warn'; b.textContent='⚠ 請確認'; header.appendChild(b); }
+        updateGroupPreview(gi);
+        const header=document.querySelector(`#gc_${gi} .group-header`);
+        if(header){header.querySelectorAll('.conf-warn').forEach(el=>el.remove());
+          if(g.lowConf){const b=document.createElement('span');b.className='conf-warn';b.textContent='⚠ 請確認';document.querySelector(`#gc_${gi} .group-row1`).appendChild(b);}
         }
       }
     }
-    statusEl.style.display='none'; updateDownloadBtn(); toast('自動辨識完成，請確認結果','success');
-  } catch(e) { statusEl.style.display='none'; toast('OCR 失敗：'+e.message,'error'); }
-  finally { btn.disabled=false; }
+    statusEl.style.display='none';updateOrgBtns();toast('自動辨識完成，請確認結果','success');
+  }catch(e){statusEl.style.display='none';toast('OCR 失敗：'+e.message,'error');}
+  finally{btn.disabled=false;}
 }
 
-async function organizeFiles() {
-  if (!groups.length) return;
-  if (!dirHandle) { toast('請先選取資料夾','error'); return; }
-  const btn=document.getElementById('organizeBtn');
-  btn.disabled=true;
-  const total=groups.reduce((s,g)=>s+g.photos.length,0); let done=0;
-  try {
+// mode: 'named' = groups with namePhotoIdx set; 'unnamed' = groups without
+async function organizeFiles(mode) {
+  const targetGroups = groups.filter(g => mode==='named' ? g.namePhotoIdx!==null : g.namePhotoIdx===null);
+  if(!targetGroups.length){toast('沒有符合條件的組別','info');return;}
+  if(!dirHandle){toast('請先選取資料夾','error');return;}
+  const btnId=mode==='named'?'organizeBtn':'organizeUnnamedBtn';
+  const btn=document.getElementById(btnId);btn.disabled=true;
+  const total=targetGroups.reduce((s,g)=>s+g.photos.length,0);let done=0;
+  try{
     const originalDir=await dirHandle.getDirectoryHandle('原始',{create:true});
-    for (const g of groups) {
-      const personName=g.personName.trim()||autoGroupName(g);
-      const folderName=buildFolderName(personName)||personName;
-      const personDir=await dirHandle.getDirectoryHandle(folderName,{create:true});
-      for (let pi=0;pi<g.photos.length;pi++) {
+    for(const g of targetGroups){
+      const fn=groupFolderName(g);
+      const personDir=await dirHandle.getDirectoryHandle(fn,{create:true});
+      for(let pi=0;pi<g.photos.length;pi++){
         const p=g.photos[pi];
         const fh=await personDir.getFileHandle(p.name,{create:true});
-        const w=await fh.createWritable(); await w.write(p.file); await w.close();
-        if (pi===g.namePhotoIdx) {
+        const w=await fh.createWritable();await w.write(p.file);await w.close();
+        if(pi===g.namePhotoIdx){
           const ofh=await originalDir.getFileHandle(p.name,{create:true});
-          const ow=await ofh.createWritable(); await ow.write(p.file); await ow.close();
+          const ow=await ofh.createWritable();await ow.write(p.file);await ow.close();
         }
-        done++; btn.textContent=`整理中 ${done}/${total}`;
+        done++;btn.textContent=`整理中 ${done}/${total}`;
       }
     }
-    const named=groups.filter(g=>g.personName.trim()).length, auto=groups.length-named;
-    toast(`整理完成！${named} 位命名、${auto>0?auto+' 組日期命名、':''}共 ${total} 張`,'success');
-  } catch(e) { toast('整理失敗：'+e.message,'error'); }
-  finally { btn.textContent='✅ 整理到資料夾'; updateDownloadBtn(); }
+    toast(`整理完成！${targetGroups.length} 組、${total} 張`,'success');
+  }catch(e){toast('整理失敗：'+e.message,'error');}
+  finally{
+    btn.textContent=mode==='named'?'✅ 整理（已選名字照）':'📁 整理（未選名字照）';
+    updateOrgBtns();
+  }
 }
 
-// ═══════════════════════════════════════
+// ════════════════════════════════
 //  TAB 2 — 照片編輯
-// ═══════════════════════════════════════
-let editDirHandle=null, editFiles=[], editSelected=new Set(), editTransforms={}, editSelOrder=[];
+// ════════════════════════════════
+let editDirHandle=null,editFiles=[],editSelected=new Set(),editTransforms={},editSelOrder=[];
 const MAX_SEL=14;
+let editState={selPrefix:new Set(),selClinic:null,selSuffix:new Set()};
 
-async function selectEditFolder() {
-  if (!window.showDirectoryPicker) { toast('請使用 Chrome 或 Edge','error'); return; }
-  try { editDirHandle=await window.showDirectoryPicker({mode:'readwrite'}); }
-  catch(e) { if(e.name!=='AbortError') toast('無法開啟資料夾：'+e.message,'error'); return; }
+function renderEditPills(){
+  const container=document.getElementById('editPills');if(!container)return;
+  const hasPills=namingConfig.prefix.length||namingConfig.clinic.length||namingConfig.suffix.length;
+  if(!hasPills){container.innerHTML='';return;}
+  let html='';
+  if(namingConfig.prefix.length){
+    html+=`<span class="pill-label">前綴</span>`;
+    namingConfig.prefix.forEach((item,i)=>{
+      html+=`<button class="pill${editState.selPrefix.has(i)?' active':''}" onclick="toggleEditPrefix(${i})">${escHtml(item.text)}</button>`;
+    });
+  }
+  if(namingConfig.clinic.length){
+    html+=`<span class="pill-label" style="margin-left:4px">診所</span>`;
+    namingConfig.clinic.forEach((item,i)=>{
+      html+=`<button class="pill${editState.selClinic===i?' active clinic':''}" onclick="toggleEditClinic(${i})">${escHtml(item.text)}</button>`;
+    });
+  }
+  if(namingConfig.suffix.length){
+    html+=`<span class="pill-label" style="margin-left:4px">後綴</span>`;
+    namingConfig.suffix.forEach((item,i)=>{
+      html+=`<button class="pill${editState.selSuffix.has(i)?' active':''}" onclick="toggleEditSuffix(${i})">${escHtml(item.text)}</button>`;
+    });
+  }
+  container.innerHTML=html;
+}
+window.toggleEditPrefix=function(i){if(editState.selPrefix.has(i))editState.selPrefix.delete(i);else editState.selPrefix.add(i);renderEditPills();updateEditPreview();};
+window.toggleEditClinic=function(i){editState.selClinic=(editState.selClinic===i)?null:i;renderEditPills();updateEditPreview();};
+window.toggleEditSuffix=function(i){if(editState.selSuffix.has(i))editState.selSuffix.delete(i);else editState.selSuffix.add(i);renderEditPills();updateEditPreview();};
+
+function updateEditPreview(){
+  const personName=document.getElementById('editPersonName')?.value.trim()||'';
+  const preview=buildFolderName(personName,editState.selPrefix,editState.selClinic,editState.selSuffix)||personName||'（請輸入人名）';
+  const el=document.getElementById('editFolderPreview');if(el)el.textContent=preview;
+}
+
+async function selectEditFolder(){
+  if(!window.showDirectoryPicker){toast('請使用 Chrome 或 Edge','error');return;}
+  try{editDirHandle=await window.showDirectoryPicker({mode:'readwrite'});}
+  catch(e){if(e.name!=='AbortError')toast('無法開啟：'+e.message,'error');return;}
   document.getElementById('editUploadText').textContent=`已選取：${editDirHandle.name}`;
   const imgs=[];
-  for await (const [name,handle] of editDirHandle) {
-    if (handle.kind!=='file') continue;
-    if (!/\.(jpe?g|png|heic|heif|webp|bmp|gif|tiff?)$/i.test(name)) continue;
-    const file=await handle.getFile(); imgs.push({file,name});
+  for await(const[name,handle]of editDirHandle){
+    if(handle.kind!=='file')continue;
+    if(!/\.(jpe?g|png|heic|heif|webp|bmp|gif|tiff?)$/i.test(name))continue;
+    const file=await handle.getFile();imgs.push({file,name});
   }
-  if (!imgs.length) { toast('資料夾內沒有找到圖片','error'); return; }
-  for (const item of imgs) {
-    try {
+  if(!imgs.length){toast('沒有找到圖片','error');return;}
+  for(const item of imgs){
+    try{
       const exif=await exifr.parse(item.file,['DateTimeOriginal','CreateDate','DateTime']);
       item.time=exif?.DateTimeOriginal||exif?.CreateDate||exif?.DateTime||new Date(item.file.lastModified);
-    } catch(e) { item.time=new Date(item.file.lastModified); }
+    }catch(e){item.time=new Date(item.file.lastModified);}
   }
   imgs.sort((a,b)=>new Date(a.time)-new Date(b.time));
   editFiles=imgs.map((f,i)=>({...f,idx:i}));
-  editSelected=new Set(); editTransforms={}; editSelOrder=[];
-  renderEditGrid();
+  editSelected=new Set();editTransforms={};editSelOrder=[];
+  renderEditGrid();renderEditPills();
   document.getElementById('editSection').style.display='block';
-  updateEditSelCount(); updateEditFolderPreview();
+  updateEditSelCount();updateEditPreview();
 }
 
-function renderEditGrid() {
+function renderEditGrid(){
   document.getElementById('editGrid').innerHTML=editFiles.map(f=>`
     <div class="edit-item${editSelected.has(f.idx)?' selected':''}" id="ei_${f.idx}" onclick="toggleEditSelect(${f.idx})">
       <div class="edit-thumb-wrap">
@@ -626,116 +701,94 @@ function renderEditGrid() {
       </div>
       <div class="edit-filename" title="${escHtml(f.name)}">${escHtml(f.name)}</div>
       <div class="edit-controls" id="ec_${f.idx}" style="display:${editSelected.has(f.idx)?'flex':'none'}">
-        <button class="btn btn-ghost btn-xs" title="順時鐘90°" onclick="event.stopPropagation();applyEdit(${f.idx},'cw')">↻</button>
-        <button class="btn btn-ghost btn-xs" title="逆時鐘90°" onclick="event.stopPropagation();applyEdit(${f.idx},'ccw')">↺</button>
-        <button class="btn btn-ghost btn-xs" title="左右鏡像" onclick="event.stopPropagation();applyEdit(${f.idx},'flipH')">↔</button>
-        <button class="btn btn-ghost btn-xs" title="上下鏡像" onclick="event.stopPropagation();applyEdit(${f.idx},'flipV')">↕</button>
+        <button class="btn btn-ghost btn-xs" title="順時鐘" onclick="event.stopPropagation();applyEdit(${f.idx},'cw')">↻</button>
+        <button class="btn btn-ghost btn-xs" title="逆時鐘" onclick="event.stopPropagation();applyEdit(${f.idx},'ccw')">↺</button>
+        <button class="btn btn-ghost btn-xs" title="左右" onclick="event.stopPropagation();applyEdit(${f.idx},'flipH')">↔</button>
+        <button class="btn btn-ghost btn-xs" title="上下" onclick="event.stopPropagation();applyEdit(${f.idx},'flipV')">↕</button>
       </div>
     </div>`).join('');
-  editFiles.forEach(f=>{
-    const img=document.getElementById(`et_${f.idx}`);
-    if (img) img.src=URL.createObjectURL(f.file);
-  });
+  editFiles.forEach(f=>{const img=document.getElementById(`et_${f.idx}`);if(img)img.src=URL.createObjectURL(f.file);});
 }
 
 window.toggleEditSelect=function(idx){
-  if (editSelected.has(idx)) {
-    editSelected.delete(idx); editSelOrder=editSelOrder.filter(i=>i!==idx);
-  } else {
-    if (editSelected.size>=MAX_SEL) { toast(`最多選 ${MAX_SEL} 張`,'error'); return; }
-    editSelected.add(idx); editSelOrder.push(idx);
-  }
-  const item=document.getElementById(`ei_${idx}`);
-  if (item) item.classList.toggle('selected',editSelected.has(idx));
-  const ctrl=document.getElementById(`ec_${idx}`);
-  if (ctrl) ctrl.style.display=editSelected.has(idx)?'flex':'none';
+  if(editSelected.has(idx)){editSelected.delete(idx);editSelOrder=editSelOrder.filter(i=>i!==idx);}
+  else{if(editSelected.size>=MAX_SEL){toast(`最多選 ${MAX_SEL} 張`,'error');return;}editSelected.add(idx);editSelOrder.push(idx);}
+  const item=document.getElementById(`ei_${idx}`);if(item)item.classList.toggle('selected',editSelected.has(idx));
+  const ctrl=document.getElementById(`ec_${idx}`);if(ctrl)ctrl.style.display=editSelected.has(idx)?'flex':'none';
   editSelOrder.forEach((i,pos)=>{const b=document.getElementById(`esb_${i}`);if(b)b.textContent=pos+1;});
-  if (!editSelected.has(idx)) { const b=document.getElementById(`esb_${idx}`); if(b)b.textContent=''; }
+  if(!editSelected.has(idx)){const b=document.getElementById(`esb_${idx}`);if(b)b.textContent='';}
   updateEditSelCount();
 };
-
 window.applyEdit=function(idx,type){
-  if (!editTransforms[idx]) editTransforms[idx]={rotation:0,flipH:false,flipV:false};
+  if(!editTransforms[idx])editTransforms[idx]={rotation:0,flipH:false,flipV:false};
   const t=editTransforms[idx];
-  if (type==='cw')   t.rotation=(t.rotation+90)%360;
-  if (type==='ccw')  t.rotation=(t.rotation+270)%360;
-  if (type==='flipH') t.flipH=!t.flipH;
-  if (type==='flipV') t.flipV=!t.flipV;
-  const img=document.getElementById(`et_${idx}`);
-  if (img) img.style.transform=cssTransform(t);
+  if(type==='cw')t.rotation=(t.rotation+90)%360;
+  if(type==='ccw')t.rotation=(t.rotation+270)%360;
+  if(type==='flipH')t.flipH=!t.flipH;
+  if(type==='flipV')t.flipV=!t.flipV;
+  const img=document.getElementById(`et_${idx}`);if(img)img.style.transform=cssTransform(t);
 };
-
-function cssTransform(t) {
-  if (!t) return 'none';
-  const p=[];
-  if (t.rotation) p.push(`rotate(${t.rotation}deg)`);
-  if (t.flipH) p.push('scaleX(-1)');
-  if (t.flipV) p.push('scaleY(-1)');
-  return p.length?p.join(' '):'none';
-}
-
-function clearEditSelection() {
-  editSelected.clear(); editSelOrder=[];
+function cssTransform(t){if(!t)return'none';const p=[];if(t.rotation)p.push(`rotate(${t.rotation}deg)`);if(t.flipH)p.push('scaleX(-1)');if(t.flipV)p.push('scaleY(-1)');return p.length?p.join(' '):'none';}
+function clearEditSelection(){
+  editSelected.clear();editSelOrder=[];
   document.querySelectorAll('.edit-item').forEach(el=>el.classList.remove('selected'));
   document.querySelectorAll('[id^="ec_"]').forEach(el=>el.style.display='none');
   document.querySelectorAll('[id^="esb_"]').forEach(el=>el.textContent='');
   updateEditSelCount();
 }
-function updateEditSelCount() {
+function updateEditSelCount(){
   const n=editSelected.size;
   document.getElementById('editSelCount').textContent=`已選 ${n} / ${MAX_SEL}`;
   document.getElementById('saveEditBtn').disabled=n===0;
 }
 
-async function applyTransformCanvas(file,t) {
+async function applyTransformCanvas(file,t){
   return new Promise((resolve,reject)=>{
     const img=new Image();
     img.onload=()=>{
-      const r=t.rotation||0, swapped=r===90||r===270;
+      const r=t.rotation||0,swapped=r===90||r===270;
       const canvas=document.createElement('canvas');
-      canvas.width=swapped?img.height:img.width; canvas.height=swapped?img.width:img.height;
+      canvas.width=swapped?img.height:img.width;canvas.height=swapped?img.width:img.height;
       const ctx=canvas.getContext('2d');
-      ctx.translate(canvas.width/2,canvas.height/2); ctx.rotate(r*Math.PI/180);
-      if(t.flipH) ctx.scale(-1,1); if(t.flipV) ctx.scale(1,-1);
+      ctx.translate(canvas.width/2,canvas.height/2);ctx.rotate(r*Math.PI/180);
+      if(t.flipH)ctx.scale(-1,1);if(t.flipV)ctx.scale(1,-1);
       ctx.drawImage(img,-img.width/2,-img.height/2);
       URL.revokeObjectURL(img.src);
       canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('canvas empty')),'image/jpeg',0.95);
     };
-    img.onerror=reject; img.src=URL.createObjectURL(file);
+    img.onerror=reject;img.src=URL.createObjectURL(file);
   });
 }
 
-async function saveEditPhotos() {
-  if (!editSelected.size) return;
-  if (!editDirHandle) { toast('請先選取資料夾','error'); return; }
-  const btn=document.getElementById('saveEditBtn');
-  btn.disabled=true;
+async function saveEditPhotos(){
+  if(!editSelected.size)return;
+  if(!editDirHandle){toast('請先選取資料夾','error');return;}
+  const btn=document.getElementById('saveEditBtn');btn.disabled=true;
   const personName=document.getElementById('editPersonName').value.trim();
-  // Build folder name; fallback to date if nothing set
-  let folderName=buildFolderName(personName);
-  if (!folderName) {
+  let folderName=buildFolderName(personName,editState.selPrefix,editState.selClinic,editState.selSuffix);
+  if(!folderName){
     const firstIdx=editSelOrder[0]??[...editSelected][0];
     const d=new Date(editFiles[firstIdx]?.time);
     const p=n=>String(n).padStart(2,'0');
     folderName=isNaN(d)?`照片_${Date.now()}`:`${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}`;
   }
-  const total=editSelected.size; let done=0;
-  try {
+  const total=editSelected.size;let done=0;
+  try{
     const outDir=await editDirHandle.getDirectoryHandle(folderName,{create:true});
     const order=editSelOrder.length?editSelOrder:[...editSelected];
-    for (const idx of order) {
+    for(const idx of order){
       const f=editFiles[idx];
       const t=editTransforms[idx]||{rotation:0,flipH:false,flipV:false};
       const needTransform=t.rotation||t.flipH||t.flipV;
       const blob=needTransform?await applyTransformCanvas(f.file,t):f.file;
       const outName=needTransform?f.name.replace(/\.[^.]+$/,'.jpg'):f.name;
       const fh=await outDir.getFileHandle(outName,{create:true});
-      const w=await fh.createWritable(); await w.write(blob); await w.close();
-      done++; btn.textContent=`儲存中 ${done}/${total}`;
+      const w=await fh.createWritable();await w.write(blob);await w.close();
+      done++;btn.textContent=`儲存中 ${done}/${total}`;
     }
     toast(`已儲存 ${total} 張到「${folderName}」`,'success');
-  } catch(e) { toast('儲存失敗：'+e.message,'error'); }
-  finally { btn.textContent='💾 儲存選取照片'; updateEditSelCount(); }
+  }catch(e){toast('儲存失敗：'+e.message,'error');}
+  finally{btn.textContent='💾 儲存';updateEditSelCount();}
 }
 </script>
 </body>
