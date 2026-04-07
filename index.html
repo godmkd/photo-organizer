@@ -352,7 +352,29 @@ function buildFolderName(personName, selPrefix, selClinic, selSuffix) {
 // ════════════════════════════════
 //  TAB 1 — 照片整理
 // ════════════════════════════════
-let allFiles=[], groups=[], dirHandle=null, ocrWorker=null;
+let allFiles=[], groups=[], dirHandle=null, ocrWorker=null, thumbObserver=null;
+
+function ensureThumbObserver(){
+  if(thumbObserver)return thumbObserver;
+  thumbObserver=new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      const img=entry.target;
+      if(entry.isIntersecting){
+        if(!img.getAttribute('src')?.startsWith('blob:')){
+          const gi=img.dataset.gi,pi=img.dataset.pi,ei=img.dataset.ei;
+          if(gi!==undefined&&pi!==undefined){
+            const g=groups[+gi];if(g?.photos[+pi])img.src=URL.createObjectURL(g.photos[+pi].file);
+          }else if(ei!==undefined){
+            const f=editFiles[+ei];if(f)img.src=URL.createObjectURL(f.file);
+          }
+        }
+      }else{
+        const s=img.getAttribute('src');if(s?.startsWith('blob:')){URL.revokeObjectURL(s);img.removeAttribute('src');}
+      }
+    });
+  },{rootMargin:'200px'});
+  return thumbObserver;
+}
 
 async function selectFolder() {
   if(!window.showDirectoryPicker){toast('請使用 Chrome 或 Edge','error');return;}
@@ -424,6 +446,7 @@ function groupFolderName(g) {
 function renderGroups() {
   document.getElementById('groupsSection').style.display='block';
   updateOrgBtns();
+  document.querySelectorAll('.photo-item img[src^="blob:"]').forEach(img=>URL.revokeObjectURL(img.src));
   document.getElementById('groupsList').innerHTML=groups.map((g,gi)=>{
     const first=g.photos[0],last=g.photos[g.photos.length-1];
     const fn=groupFolderName(g);
@@ -447,22 +470,19 @@ function renderGroups() {
       </div>
     </div>`;
   }).join('');
-  // Revoke old object URLs before creating new ones (memory)
-  document.querySelectorAll('.photo-item img[src^="blob:"]').forEach(img=>{
-    URL.revokeObjectURL(img.src);
-  });
+  const obs=ensureThumbObserver();
   groups.forEach((g,gi)=>{
     updateGroupPillsUI(gi);
     g.photos.forEach((p,pi)=>{
       const img=document.getElementById(`thumb_${gi}_${pi}`);
-      if(img) img.src=URL.createObjectURL(p.file);
+      if(img)obs.observe(img);
     });
   });
 }
 
 function buildThumb(p,gi,pi,isName){
   return`<div class="photo-item${isName?' name-photo':''}" id="pi_${gi}_${pi}" onclick="toggleNamePhoto(${gi},${pi})">
-    <img id="thumb_${gi}_${pi}" loading="lazy">
+    <img id="thumb_${gi}_${pi}" loading="lazy" data-gi="${gi}" data-pi="${pi}">
     ${isName?'<div class="name-badge">名字</div>':''}
     ${p.noExif?'<div class="no-exif">無EXIF</div>':''}
     <div class="photo-time">${fmtTime(p.time,true)}</div>
@@ -473,11 +493,10 @@ window.toggleNamePhoto=function(gi,pi){
   const g=groups[gi];
   g.namePhotoIdx=(g.namePhotoIdx===pi)?null:pi;
   const grid=document.getElementById(`grid_${gi}`);
+  grid.querySelectorAll('img[src^="blob:"]').forEach(img=>URL.revokeObjectURL(img.src));
   grid.innerHTML=g.photos.map((p,idx)=>buildThumb(p,gi,idx,g.namePhotoIdx===idx)).join('');
-  g.photos.forEach((p,idx)=>{
-    const img=document.getElementById(`thumb_${gi}_${idx}`);
-    if(img&&!img.src)img.src=URL.createObjectURL(p.file);
-  });
+  const obs=ensureThumbObserver();
+  g.photos.forEach((p,idx)=>{const img=document.getElementById(`thumb_${gi}_${idx}`);if(img)obs.observe(img);});
   if(g.namePhotoIdx!==null){const inp=document.getElementById('nameInput_'+gi);if(inp&&!inp.value.trim())inp.focus();}
   updateOrgBtns();
 };
@@ -566,6 +585,26 @@ async function ensureWorker(onProgress){
     logger:m=>{if(m.status==='loading tesseract core'||m.status==='loading language traineddata')onProgress(`載入 OCR 語言包 ${Math.round((m.progress||0)*100)}%`);}
   });return ocrWorker;
 }
+
+// Shrink to 800px and convert to grayscale before OCR — 3–5x speedup
+function preprocessForOCR(file){
+  return new Promise(resolve=>{
+    const img=new Image();
+    img.onload=()=>{
+      const MAX=800, scale=Math.min(1,MAX/Math.max(img.width,img.height));
+      const w=Math.round(img.width*scale), h=Math.round(img.height*scale);
+      const canvas=document.createElement('canvas');
+      canvas.width=w; canvas.height=h;
+      const ctx=canvas.getContext('2d');
+      ctx.filter='grayscale(1) contrast(1.1)';
+      ctx.drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(img.src);
+      canvas.toBlob(resolve,'image/jpeg',0.85);
+    };
+    img.src=URL.createObjectURL(file);
+  });
+}
+
 function extractName(data){
   if(data.words?.length){
     const cands=data.words.map(w=>({text:w.text.replace(/[^\u4e00-\u9fff]/g,''),conf:w.confidence}))
@@ -588,9 +627,11 @@ async function autoDetect(){
       let bestName=null,bestIdx=null,bestConf=0;
       for(let pi=0;pi<g.photos.length;pi++){
         try{
-          const{data}=await worker.recognize(g.photos[pi].file);
+          const blob=await preprocessForOCR(g.photos[pi].file);
+          const{data}=await worker.recognize(blob);
           const cand=extractName(data);
           if(cand&&cand.conf>bestConf){bestConf=cand.conf;bestName=cand.text;bestIdx=pi;}
+          if(bestConf>=80)break; // high confidence — skip remaining photos in group
         }catch(e){}
       }
       if(bestName){
@@ -598,8 +639,10 @@ async function autoDetect(){
         const input=document.getElementById(`nameInput_${gi}`);if(input)input.value=bestName;
         const grid=document.getElementById(`grid_${gi}`);
         if(grid){
+          grid.querySelectorAll('img[src^="blob:"]').forEach(img=>URL.revokeObjectURL(img.src));
           grid.innerHTML=g.photos.map((p,idx)=>buildThumb(p,gi,idx,g.namePhotoIdx===idx)).join('');
-          g.photos.forEach((p,idx)=>{const img=document.getElementById(`thumb_${gi}_${idx}`);if(img)img.src=URL.createObjectURL(p.file);});
+          const obs2=ensureThumbObserver();
+          g.photos.forEach((p,idx)=>{const img=document.getElementById(`thumb_${gi}_${idx}`);if(img)obs2.observe(img);});
         }
         updateGroupPreview(gi);
         const header=document.querySelector(`#gc_${gi} .group-header`);
@@ -717,7 +760,7 @@ function renderEditGrid(){
   document.getElementById('editGrid').innerHTML=editFiles.map(f=>`
     <div class="edit-item${editSelected.has(f.idx)?' selected':''}" id="ei_${f.idx}" onclick="toggleEditSelect(${f.idx})">
       <div class="edit-thumb-wrap">
-        <img id="et_${f.idx}" loading="lazy" style="transform:${cssTransform(editTransforms[f.idx])}">
+        <img id="et_${f.idx}" loading="lazy" data-ei="${f.idx}" style="transform:${cssTransform(editTransforms[f.idx])}">
         <div class="sel-badge" id="esb_${f.idx}">${editSelOrder.indexOf(f.idx)>=0?editSelOrder.indexOf(f.idx)+1:''}</div>
       </div>
       <div class="edit-filename" title="${escHtml(f.name)}">${escHtml(f.name)}</div>
@@ -728,7 +771,8 @@ function renderEditGrid(){
         <button class="btn btn-ghost btn-xs" title="上下" onclick="event.stopPropagation();applyEdit(${f.idx},'flipV')">↕</button>
       </div>
     </div>`).join('');
-  editFiles.forEach(f=>{const img=document.getElementById(`et_${f.idx}`);if(img)img.src=URL.createObjectURL(f.file);});
+  const editObs=ensureThumbObserver();
+  editFiles.forEach(f=>{const img=document.getElementById(`et_${f.idx}`);if(img)editObs.observe(img);});
 }
 
 window.toggleEditSelect=function(idx){
