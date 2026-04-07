@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>照片整理系統</title>
 <script src="https://cdn.jsdelivr.net/npm/exifr@7/dist/full.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1a2e;color:#e2e8f0;min-height:100vh}
@@ -33,6 +34,7 @@ h1{font-size:1.5rem;font-weight:700;margin-bottom:4px;color:#90cdf4}
 .group-count{font-size:.82rem;color:#68d391}
 .group-name-input{padding:5px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#e2e8f0;font-size:.88rem;min-width:150px}
 .group-name-input:focus{outline:none;border-color:#63b3ed}
+.conf-warn{font-size:.75rem;color:#f6e05e;background:rgba(246,224,94,.12);padding:2px 6px;border-radius:4px;border:1px solid rgba(246,224,94,.25)}
 .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;padding:12px}
 .photo-item{position:relative;border-radius:8px;overflow:hidden;cursor:pointer;aspect-ratio:1;background:#000}
 .photo-item img{width:100%;height:100%;object-fit:cover;display:block}
@@ -47,6 +49,7 @@ h1{font-size:1.5rem;font-weight:700;margin-bottom:4px;color:#90cdf4}
 .settings-row input[type=number]{width:70px;padding:5px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#e2e8f0;font-size:.88rem}
 .progress-bar{height:6px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden;margin-top:8px}
 .progress-fill{height:100%;background:#3182ce;transition:width .3s}
+.ocr-status{font-size:.82rem;color:#90cdf4;background:rgba(49,130,206,.1);border:1px solid rgba(49,130,206,.2);border-radius:6px;padding:8px 12px;display:none;margin-bottom:8px}
 .toast-container{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
 .toast{padding:10px 16px;border-radius:8px;font-size:.88rem;color:#fff;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none}
 .toast.show{opacity:1;transform:translateY(0)}
@@ -60,23 +63,23 @@ h1{font-size:1.5rem;font-weight:700;margin-bottom:4px;color:#90cdf4}
 <body>
 <div class="container">
   <h1>📸 照片整理系統</h1>
-  <p class="subtitle">依時間自動分組，標記名字照，直接整理到資料夾</p>
+  <p class="subtitle">依時間自動分組 → 自動辨識名字 → 整理到資料夾</p>
 
   <div class="browser-warn" id="browserWarn">
     ⚠️ 此瀏覽器不支援直接寫入資料夾，請改用 Chrome 或 Edge。
   </div>
 
-  <!-- Step 1: Select folder -->
+  <!-- Step 1 -->
   <div class="card">
     <div style="margin-bottom:12px"><span class="step-badge">1</span>選取資料夾</div>
     <div class="upload-zone" id="uploadZone" onclick="selectFolder()">
       <div class="upload-icon">📁</div>
       <div class="upload-text" id="uploadText">點擊選取資料夾</div>
-      <div class="upload-hint">支援 JPG、PNG、HEIC 等格式・需要 Chrome 或 Edge</div>
+      <div class="upload-hint">需要 Chrome 或 Edge・照片不會上傳，全部在本機處理</div>
     </div>
   </div>
 
-  <!-- Step 2: Settings & Group -->
+  <!-- Step 2 -->
   <div class="card" id="settingsCard" style="display:none">
     <div style="margin-bottom:12px"><span class="step-badge">2</span>分組設定</div>
     <div class="settings-row">
@@ -91,16 +94,18 @@ h1{font-size:1.5rem;font-weight:700;margin-bottom:4px;color:#90cdf4}
     </div>
   </div>
 
-  <!-- Step 3: Groups -->
+  <!-- Step 3 -->
   <div id="groupsSection" style="display:none">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-      <div><span class="step-badge">3</span>點選每組的名字照，輸入人名</div>
-      <div style="display:flex;gap:8px">
+      <div><span class="step-badge">3</span>確認名字，有需要可手動修改</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
         <span id="groupStats" style="font-size:.82rem;color:#a0aec0;line-height:2"></span>
+        <button class="btn btn-primary btn-sm" id="autoDetectBtn" onclick="autoDetect()">🔍 自動辨識</button>
         <button class="btn btn-success" id="organizeBtn" onclick="organizeFiles()" disabled>✅ 整理到資料夾</button>
       </div>
     </div>
-    <div class="tip">💡 點選照片標記為名字照，輸入人名後「整理到資料夾」按鈕會亮起。<br>整理完成後，原始資料夾內會新增各人名子資料夾和「原始」資料夾（僅含名字照）。</div>
+    <div class="ocr-status" id="ocrStatus"></div>
+    <div class="tip">💡 點選照片可切換名字照・⚠ 標示表示辨識信心較低，請確認</div>
     <div id="groupsList"></div>
   </div>
 
@@ -108,20 +113,19 @@ h1{font-size:1.5rem;font-weight:700;margin-bottom:4px;color:#90cdf4}
 </div>
 
 <script>
-let allFiles = [];   // {file, name, time, idx, noExif}
-let groups = [];     // [{photos:[...], namePhotoIdx, personName}]
+let allFiles = [];
+let groups = [];
 let dirHandle = null;
+let ocrWorker = null;
 
-// Check browser support
 if (!window.showDirectoryPicker) {
   document.getElementById('browserWarn').style.display = 'block';
 }
 
-// ── Folder selection (File System Access API) ──
+// ── Folder selection ──
 async function selectFolder() {
   if (!window.showDirectoryPicker) {
-    toast('此瀏覽器不支援直接存檔，請使用 Chrome 或 Edge', 'error');
-    return;
+    toast('此瀏覽器不支援直接存檔，請使用 Chrome 或 Edge', 'error'); return;
   }
   try {
     dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
@@ -131,26 +135,20 @@ async function selectFolder() {
   }
 
   document.getElementById('uploadText').textContent = `已選取：${dirHandle.name}`;
-
-  // Collect image files
   const imgFiles = [];
   try {
     for await (const [name, handle] of dirHandle) {
       if (handle.kind !== 'file') continue;
       if (!/\.(jpe?g|png|heic|heif|webp|bmp|gif|tiff?)$/i.test(name)) continue;
-      const file = await handle.getFile();
-      imgFiles.push(file);
+      imgFiles.push(await handle.getFile());
     }
-  } catch(e) {
-    toast('讀取資料夾失敗：' + e.message, 'error');
-    return;
-  }
+  } catch(e) { toast('讀取資料夾失敗：' + e.message, 'error'); return; }
 
   if (!imgFiles.length) { toast('資料夾內沒有找到圖片', 'error'); return; }
   await processFiles(imgFiles);
 }
 
-// ── File processing ──
+// ── EXIF processing ──
 async function processFiles(imgs) {
   document.getElementById('settingsCard').style.display = 'block';
   document.getElementById('loadingBar').style.display = 'block';
@@ -162,17 +160,13 @@ async function processFiles(imgs) {
   const txt = document.getElementById('loadingText');
   let done = 0;
   const BATCH = 20;
-
   for (let i = 0; i < allFiles.length; i += BATCH) {
-    const batch = allFiles.slice(i, i + BATCH);
-    await Promise.all(batch.map(async item => {
+    await Promise.all(allFiles.slice(i, i + BATCH).map(async item => {
       try {
         const exif = await exifr.parse(item.file, ['DateTimeOriginal', 'CreateDate', 'DateTime']);
         item.time = exif?.DateTimeOriginal || exif?.CreateDate || exif?.DateTime || null;
         if (!item.time) { item.time = new Date(item.file.lastModified); item.noExif = true; }
-      } catch(e) {
-        item.time = new Date(item.file.lastModified); item.noExif = true;
-      }
+      } catch(e) { item.time = new Date(item.file.lastModified); item.noExif = true; }
       done++;
       bar.style.width = Math.round(done / allFiles.length * 100) + '%';
       txt.textContent = `讀取 EXIF 中... ${done}/${allFiles.length}`;
@@ -190,12 +184,12 @@ function regroup() {
   if (!allFiles.length) return;
   const gap = (parseInt(document.getElementById('gapMinutes').value) || 20) * 60 * 1000;
   groups = [];
-  let cur = { photos: [allFiles[0]], namePhotoIdx: null, personName: '' };
+  let cur = { photos: [allFiles[0]], namePhotoIdx: null, personName: '', lowConf: false };
   for (let i = 1; i < allFiles.length; i++) {
-    const prev = new Date(allFiles[i-1].time).getTime();
-    const curr = new Date(allFiles[i].time).getTime();
-    if (curr - prev > gap) { groups.push(cur); cur = { photos: [allFiles[i]], namePhotoIdx: null, personName: '' }; }
-    else cur.photos.push(allFiles[i]);
+    if (new Date(allFiles[i].time) - new Date(allFiles[i-1].time) > gap) {
+      groups.push(cur);
+      cur = { photos: [allFiles[i]], namePhotoIdx: null, personName: '', lowConf: false };
+    } else cur.photos.push(allFiles[i]);
   }
   groups.push(cur);
   renderGroups();
@@ -205,32 +199,30 @@ function regroup() {
 function renderGroups() {
   document.getElementById('groupsSection').style.display = 'block';
   updateDownloadBtn();
-  const list = document.getElementById('groupsList');
-  list.innerHTML = groups.map((g, gi) => {
+  document.getElementById('groupsList').innerHTML = groups.map((g, gi) => {
     const first = g.photos[0], last = g.photos[g.photos.length - 1];
-    const timeRange = first && last ? `${fmtTime(first.time)} ~ ${fmtTime(last.time)}` : '';
+    const timeRange = `${fmtTime(first?.time)} ~ ${fmtTime(last?.time)}`;
     return `<div class="group-card" id="gc_${gi}">
-      <div class="group-header">
+      <div class="group-header" id="gh_${gi}">
         <div class="group-index">${gi + 1}</div>
         <div class="group-time">${timeRange}</div>
         <div class="group-count">${g.photos.length} 張</div>
-        <input class="group-name-input" placeholder="人名（點選名字照後填入）"
+        <input class="group-name-input" placeholder="人名（可自動辨識）"
           value="${escHtml(g.personName)}"
-          oninput="groups[${gi}].personName=this.value;updateDownloadBtn()"
+          oninput="groups[${gi}].personName=this.value;groups[${gi}].lowConf=false;updateDownloadBtn()"
           id="nameInput_${gi}">
+        ${g.lowConf ? '<span class="conf-warn">⚠ 請確認</span>' : ''}
       </div>
-      <div class="photo-grid">
+      <div class="photo-grid" id="grid_${gi}">
         ${g.photos.map((p, pi) => buildThumb(p, gi, pi, g.namePhotoIdx === pi)).join('')}
       </div>
     </div>`;
   }).join('');
 
-  groups.forEach((g, gi) => {
-    g.photos.forEach((p, pi) => {
-      const img = document.getElementById(`thumb_${gi}_${pi}`);
-      if (img) img.src = URL.createObjectURL(p.file);
-    });
-  });
+  groups.forEach((g, gi) => g.photos.forEach((p, pi) => {
+    const img = document.getElementById(`thumb_${gi}_${pi}`);
+    if (img) img.src = URL.createObjectURL(p.file);
+  }));
 }
 
 function buildThumb(p, gi, pi, isName) {
@@ -245,7 +237,7 @@ function buildThumb(p, gi, pi, isName) {
 window.toggleNamePhoto = function(gi, pi) {
   const g = groups[gi];
   g.namePhotoIdx = (g.namePhotoIdx === pi) ? null : pi;
-  const grid = document.querySelector(`#gc_${gi} .photo-grid`);
+  const grid = document.getElementById(`grid_${gi}`);
   grid.innerHTML = g.photos.map((p, idx) => buildThumb(p, gi, idx, g.namePhotoIdx === idx)).join('');
   g.photos.forEach((p, idx) => {
     const img = document.getElementById(`thumb_${gi}_${idx}`);
@@ -266,7 +258,111 @@ function updateDownloadBtn() {
   if (btn) btn.disabled = named === 0;
 }
 
-// ── Organize to folders (File System Access API) ──
+// ── OCR ──
+async function ensureWorker(onProgress) {
+  if (ocrWorker) return ocrWorker;
+  ocrWorker = await Tesseract.createWorker('chi_tra', 1, {
+    logger: m => {
+      if (m.status === 'loading tesseract core' || m.status === 'loading language traineddata') {
+        onProgress(`載入 OCR 語言包 ${Math.round((m.progress || 0) * 100)}%`);
+      }
+    }
+  });
+  return ocrWorker;
+}
+
+function extractName(data) {
+  // Try word-level (higher precision)
+  if (data.words?.length) {
+    const cands = data.words
+      .map(w => ({ text: w.text.replace(/[^\u4e00-\u9fff]/g, ''), conf: w.confidence }))
+      .filter(w => w.text.length >= 2 && w.text.length <= 4 && w.conf > 30)
+      .sort((a, b) => b.conf - a.conf);
+    if (cands.length) return cands[0];
+  }
+  // Fallback: regex on full text
+  const m = (data.text || '').match(/[\u4e00-\u9fff]{2,4}/);
+  if (m) return { text: m[0], conf: data.confidence || 0 };
+  return null;
+}
+
+async function autoDetect() {
+  const btn = document.getElementById('autoDetectBtn');
+  const statusEl = document.getElementById('ocrStatus');
+  btn.disabled = true;
+  statusEl.style.display = 'block';
+  statusEl.textContent = '初始化 OCR...';
+
+  try {
+    const worker = await ensureWorker(msg => { statusEl.textContent = msg; });
+
+    for (let gi = 0; gi < groups.length; gi++) {
+      const g = groups[gi];
+      // Skip groups already named by user
+      if (g.personName.trim() && !g.lowConf) continue;
+
+      statusEl.textContent = `辨識中... 第 ${gi + 1}/${groups.length} 組`;
+
+      let bestName = null, bestIdx = null, bestConf = 0;
+
+      for (let pi = 0; pi < g.photos.length; pi++) {
+        try {
+          const { data } = await worker.recognize(g.photos[pi].file);
+          const cand = extractName(data);
+          if (cand && cand.conf > bestConf) {
+            bestConf = cand.conf;
+            bestName = cand.text;
+            bestIdx = pi;
+          }
+        } catch(e) { /* skip photo */ }
+      }
+
+      if (bestName) {
+        g.personName = bestName;
+        g.namePhotoIdx = bestIdx;
+        g.lowConf = bestConf < 70;
+
+        // Update input field
+        const input = document.getElementById(`nameInput_${gi}`);
+        if (input) input.value = bestName;
+
+        // Re-render grid
+        const grid = document.getElementById(`grid_${gi}`);
+        if (grid) {
+          grid.innerHTML = g.photos.map((p, idx) => buildThumb(p, gi, idx, g.namePhotoIdx === idx)).join('');
+          g.photos.forEach((p, idx) => {
+            const img = document.getElementById(`thumb_${gi}_${idx}`);
+            if (img) img.src = URL.createObjectURL(p.file);
+          });
+        }
+
+        // Update/add low-conf badge in header
+        const header = document.getElementById(`gh_${gi}`);
+        if (header) {
+          header.querySelectorAll('.conf-warn').forEach(el => el.remove());
+          if (g.lowConf) {
+            const badge = document.createElement('span');
+            badge.className = 'conf-warn';
+            badge.textContent = '⚠ 請確認';
+            header.appendChild(badge);
+          }
+        }
+      }
+    }
+
+    statusEl.style.display = 'none';
+    updateDownloadBtn();
+    toast('自動辨識完成，請確認結果', 'success');
+  } catch(e) {
+    statusEl.style.display = 'none';
+    toast('OCR 失敗：' + e.message, 'error');
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── Organize files ──
 async function organizeFiles() {
   const namedGroups = groups.filter(g => g.personName.trim());
   if (!namedGroups.length) { toast('請先輸入至少一個人名', 'error'); return; }
@@ -274,32 +370,29 @@ async function organizeFiles() {
 
   const btn = document.getElementById('organizeBtn');
   btn.disabled = true;
-
   const total = namedGroups.reduce((s, g) => s + g.photos.length, 0);
   let done = 0;
 
   try {
+    // 原始 folder: name photos only
     const originalDir = await dirHandle.getDirectoryHandle('原始', { create: true });
 
     for (const g of namedGroups) {
       const name = g.personName.trim();
+      // create: true → returns existing folder if it already exists (merges)
       const personDir = await dirHandle.getDirectoryHandle(name, { create: true });
 
       for (let pi = 0; pi < g.photos.length; pi++) {
         const p = g.photos[pi];
 
-        // Write to person folder
         const fh = await personDir.getFileHandle(p.name, { create: true });
-        const writable = await fh.createWritable();
-        await writable.write(p.file);
-        await writable.close();
+        const w = await fh.createWritable();
+        await w.write(p.file); await w.close();
 
-        // Name photo → also write to 原始/
         if (pi === g.namePhotoIdx) {
           const ofh = await originalDir.getFileHandle(p.name, { create: true });
           const ow = await ofh.createWritable();
-          await ow.write(p.file);
-          await ow.close();
+          await ow.write(p.file); await ow.close();
         }
 
         done++;
@@ -307,7 +400,7 @@ async function organizeFiles() {
       }
     }
 
-    toast(`整理完成！共 ${namedGroups.length} 位、${total} 張`, 'success');
+    toast(`整理完成！${namedGroups.length} 位、${total} 張`, 'success');
   } catch(e) {
     toast('整理失敗：' + e.message, 'error');
   } finally {
@@ -326,17 +419,16 @@ function fmtTime(t, short = false) {
 }
 
 function escHtml(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function toast(msg, type = 'info') {
   const c = document.getElementById('toastContainer');
   const t = document.createElement('div');
-  t.className = `toast toast-${type}`;
-  t.textContent = msg;
+  t.className = `toast toast-${type}`; t.textContent = msg;
   c.appendChild(t);
   requestAnimationFrame(() => t.classList.add('show'));
-  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 3000);
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 3500);
 }
 </script>
 </body>
