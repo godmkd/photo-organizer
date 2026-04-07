@@ -105,7 +105,7 @@ h1{font-size:1.5rem;font-weight:700;margin-bottom:4px;color:#90cdf4}
       </div>
     </div>
     <div class="ocr-status" id="ocrStatus"></div>
-    <div class="tip">💡 點選照片可切換名字照・⚠ 標示表示辨識信心較低，請確認</div>
+    <div class="tip">💡 點選照片可切換名字照・⚠ 標示表示辨識信心較低，請確認・未輸入名字的組別自動以「YYYYMMDD_HHMM」命名</div>
     <div id="groupsList"></div>
   </div>
 
@@ -207,7 +207,7 @@ function renderGroups() {
         <div class="group-index">${gi + 1}</div>
         <div class="group-time">${timeRange}</div>
         <div class="group-count">${g.photos.length} 張</div>
-        <input class="group-name-input" placeholder="人名（可自動辨識）"
+        <input class="group-name-input" placeholder="空白→自動以日期命名"
           value="${escHtml(g.personName)}"
           oninput="groups[${gi}].personName=this.value;groups[${gi}].lowConf=false;updateDownloadBtn()"
           id="nameInput_${gi}">
@@ -250,12 +250,19 @@ window.toggleNamePhoto = function(gi, pi) {
   updateDownloadBtn();
 };
 
+function autoGroupName(g) {
+  const d = new Date(g.photos[0]?.time);
+  if (isNaN(d)) return '未知時間';
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
+}
+
 function updateDownloadBtn() {
   const named = groups.filter(g => g.personName.trim()).length;
   const stats = document.getElementById('groupStats');
   if (stats) stats.textContent = `${groups.length} 組 | 已命名 ${named} 組`;
   const btn = document.getElementById('organizeBtn');
-  if (btn) btn.disabled = named === 0;
+  if (btn) btn.disabled = groups.length === 0;
 }
 
 // ── OCR ──
@@ -364,22 +371,21 @@ async function autoDetect() {
 
 // ── Organize files ──
 async function organizeFiles() {
-  const namedGroups = groups.filter(g => g.personName.trim());
-  if (!namedGroups.length) { toast('請先輸入至少一個人名', 'error'); return; }
+  if (!groups.length) return;
   if (!dirHandle) { toast('請先選取資料夾', 'error'); return; }
 
   const btn = document.getElementById('organizeBtn');
   btn.disabled = true;
-  const total = namedGroups.reduce((s, g) => s + g.photos.length, 0);
+  const total = groups.reduce((s, g) => s + g.photos.length, 0);
   let done = 0;
 
   try {
-    // 原始 folder: name photos only
     const originalDir = await dirHandle.getDirectoryHandle('原始', { create: true });
 
-    for (const g of namedGroups) {
-      const name = g.personName.trim();
-      // create: true → returns existing folder if it already exists (merges)
+    for (const g of groups) {
+      // Unnamed groups use date+time of first photo
+      const name = g.personName.trim() || autoGroupName(g);
+      // create:true merges with existing folder of same name
       const personDir = await dirHandle.getDirectoryHandle(name, { create: true });
 
       for (let pi = 0; pi < g.photos.length; pi++) {
@@ -400,7 +406,9 @@ async function organizeFiles() {
       }
     }
 
-    toast(`整理完成！${namedGroups.length} 位、${total} 張`, 'success');
+    const named = groups.filter(g => g.personName.trim()).length;
+    const auto = groups.length - named;
+    toast(`整理完成！${named} 位命名、${auto > 0 ? auto + ' 組日期命名、' : ''}共 ${total} 張`, 'success');
   } catch(e) {
     toast('整理失敗：' + e.message, 'error');
   } finally {
