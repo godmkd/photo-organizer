@@ -274,9 +274,11 @@ function renderNamingPanel() {
   const container = document.getElementById('namingSegments');
   container.innerHTML = SEG_META.map(({ key, label }) => {
     const items = namingConfig[key];
+    const isClinic = key === 'clinic';
+    const inputType = isClinic ? 'radio' : 'checkbox';
     const itemsHtml = items.map((item, i) => `
       <div class="naming-item">
-        <input type="checkbox" ${item.checked?'checked':''} onchange="namingToggleItem('${key}',${i},this.checked)">
+        <input type="${inputType}" name="clinic_radio" ${item.checked?'checked':''} onchange="namingToggleItem('${key}',${i},this.checked)">
         <span class="naming-item-text" title="${escHtml(item.text)}">${escHtml(item.text)}</span>
         <button class="move-btn" onclick="namingMoveItem('${key}',${i},-1)" ${i===0?'disabled':''}>▲</button>
         <button class="move-btn" onclick="namingMoveItem('${key}',${i},1)" ${i===items.length-1?'disabled':''}>▼</button>
@@ -295,8 +297,13 @@ function renderNamingPanel() {
 }
 
 window.namingToggleItem = function(key, i, checked) {
-  namingConfig[key][i].checked = checked;
-  updateNamingPreview();
+  if (key === 'clinic' && checked) {
+    // single-select: uncheck all others first
+    namingConfig.clinic.forEach((item, j) => { item.checked = j === i; });
+  } else {
+    namingConfig[key][i].checked = checked;
+  }
+  renderNamingPanel();
   refreshGroupFolderPreviews();
   updateEditFolderPreview();
 };
@@ -327,16 +334,18 @@ window.namingAddItem = function(key) {
 };
 
 function buildFolderName(personName) {
-  const sel = arr => arr.filter(i=>i.checked).map(i=>i.text).join(' ');
-  const prefix = sel(namingConfig.prefix);
-  const clinic = sel(namingConfig.clinic);
-  const suffix = sel(namingConfig.suffix);
-  let name = '';
-  if (prefix) name += prefix + ' ';
+  const selArr = arr => arr.filter(i=>i.checked).map(i=>i.text);
+  const prefixParts = selArr(namingConfig.prefix);
+  const clinicParts = selArr(namingConfig.clinic);  // single-select, max 1
+  const suffixParts = selArr(namingConfig.suffix);
+  const prefix = prefixParts.length ? `（${prefixParts.join(' ')}）` : '';
+  const clinic = clinicParts[0] || '';
+  const suffix = suffixParts.length ? `（${suffixParts.join(' ')}）` : '';
+  let name = prefix;
   if (clinic && personName) name += clinic + ' - ' + personName;
   else if (clinic) name += clinic;
   else if (personName) name += personName;
-  if (suffix) name += (name ? ' ' : '') + suffix;
+  name += suffix;
   return name.trim();
 }
 
