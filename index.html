@@ -438,6 +438,7 @@ function renderGroups() {
             id="nameInput_${gi}">
           <div class="folder-preview" id="fp_${gi}" title="${escHtml(fn)}">${escHtml(fn)}</div>
           ${g.lowConf?'<span class="conf-warn">⚠ 請確認</span>':''}
+          ${gi>0?`<button class="btn btn-ghost btn-xs" style="margin-left:auto" title="合併到上一組" onclick="mergeGroupUp(${gi})">⊕ 合組</button>`:''}
         </div>
         <div id="gpills_${gi}"></div>
       </div>
@@ -446,11 +447,15 @@ function renderGroups() {
       </div>
     </div>`;
   }).join('');
+  // Revoke old object URLs before creating new ones (memory)
+  document.querySelectorAll('.photo-item img[src^="blob:"]').forEach(img=>{
+    URL.revokeObjectURL(img.src);
+  });
   groups.forEach((g,gi)=>{
     updateGroupPillsUI(gi);
     g.photos.forEach((p,pi)=>{
       const img=document.getElementById(`thumb_${gi}_${pi}`);
-      if(img)img.src=URL.createObjectURL(p.file);
+      if(img) img.src=URL.createObjectURL(p.file);
     });
   });
 }
@@ -537,6 +542,22 @@ function updateOrgBtns() {
   const stats=document.getElementById('groupStats');
   if(stats)stats.textContent=`${groups.length} 組 | 已命名 ${named} 組`;
 }
+
+// Merge group gi into gi-1
+window.mergeGroupUp = function(gi) {
+  if(gi<=0||gi>=groups.length) return;
+  const target=groups[gi-1], src=groups[gi];
+  // Append photos, keep sorted by time
+  target.photos=[...target.photos,...src.photos].sort((a,b)=>new Date(a.time)-new Date(b.time));
+  // Keep target's namePhotoIdx if set; else adopt src's (recalculate index after sort)
+  // Simplest: clear namePhotoIdx so user re-selects after merge
+  target.namePhotoIdx=null;
+  // Keep target person name; inherit src's if target is empty
+  if(!target.personName.trim()) target.personName=src.personName;
+  groups.splice(gi,1);
+  renderGroups();
+  toast(`第 ${gi+1} 組已合併到第 ${gi} 組`,'success');
+};
 
 // OCR
 async function ensureWorker(onProgress){
