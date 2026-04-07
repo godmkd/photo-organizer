@@ -3,30 +3,35 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>照片整理系統</title>
+<title>照片工具</title>
 <script src="https://cdn.jsdelivr.net/npm/exifr@7/dist/full.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1a2e;color:#e2e8f0;min-height:100vh}
 .container{max-width:960px;margin:0 auto;padding:20px}
-h1{font-size:1.5rem;font-weight:700;margin-bottom:4px;color:#90cdf4}
-.subtitle{font-size:.85rem;color:#718096;margin-bottom:24px}
+h1{font-size:1.5rem;font-weight:700;margin-bottom:16px;color:#90cdf4}
+.tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid rgba(255,255,255,.1);padding-bottom:0}
+.tab-btn{padding:8px 20px;border-radius:8px 8px 0 0;border:none;cursor:pointer;font-size:.9rem;font-weight:600;background:transparent;color:#718096;border-bottom:2px solid transparent;transition:all .15s}
+.tab-btn.active{color:#90cdf4;border-bottom-color:#3182ce;background:rgba(49,130,206,.08)}
+.tab-btn:hover:not(.active){color:#a0aec0;background:rgba(255,255,255,.04)}
+.tab-section{display:none}
+.tab-section.active{display:block}
 .card{background:#16213e;border-radius:12px;padding:20px;margin-bottom:16px;border:1px solid rgba(255,255,255,.08)}
-.upload-zone{border:2px dashed rgba(99,179,237,.4);border-radius:12px;padding:40px;text-align:center;cursor:pointer;transition:all .2s}
+.upload-zone{border:2px dashed rgba(99,179,237,.4);border-radius:12px;padding:36px;text-align:center;cursor:pointer;transition:all .2s}
 .upload-zone:hover{border-color:#63b3ed;background:rgba(99,179,237,.05)}
-.upload-icon{font-size:3rem;margin-bottom:12px}
-.upload-text{font-size:1rem;color:#a0aec0;margin-bottom:8px}
+.upload-icon{font-size:3rem;margin-bottom:10px}
+.upload-text{font-size:1rem;color:#a0aec0;margin-bottom:6px}
 .upload-hint{font-size:.8rem;color:#718096}
 .btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:.88rem;font-weight:600;transition:all .15s}
-.btn-primary{background:#3182ce;color:#fff}
-.btn-primary:hover{background:#2b6cb0}
-.btn-success{background:#276749;color:#fff}
-.btn-success:hover{background:#22543d}
-.btn-ghost{background:rgba(255,255,255,.08);color:#e2e8f0}
-.btn-ghost:hover{background:rgba(255,255,255,.15)}
+.btn-primary{background:#3182ce;color:#fff}.btn-primary:hover{background:#2b6cb0}
+.btn-success{background:#276749;color:#fff}.btn-success:hover{background:#22543d}
+.btn-ghost{background:rgba(255,255,255,.08);color:#e2e8f0}.btn-ghost:hover{background:rgba(255,255,255,.15)}
+.btn-warning{background:#744210;color:#fbd38d}.btn-warning:hover{background:#5f370e}
 .btn-sm{padding:5px 10px;font-size:.8rem}
+.btn-xs{padding:3px 7px;font-size:.75rem}
 .btn:disabled{opacity:.5;cursor:not-allowed}
+/* Organizer */
 .group-card{background:#0f3460;border-radius:10px;border:1px solid rgba(255,255,255,.1);margin-bottom:16px;overflow:hidden}
 .group-header{padding:12px 16px;background:rgba(0,0,0,.2);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .group-index{background:#3182ce;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0}
@@ -37,10 +42,10 @@ h1{font-size:1.5rem;font-weight:700;margin-bottom:4px;color:#90cdf4}
 .conf-warn{font-size:.75rem;color:#f6e05e;background:rgba(246,224,94,.12);padding:2px 6px;border-radius:4px;border:1px solid rgba(246,224,94,.25)}
 .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;padding:12px}
 .photo-item{position:relative;border-radius:8px;overflow:hidden;cursor:pointer;aspect-ratio:1;background:#000}
-.photo-item img{width:100%;height:100%;object-fit:cover;display:block}
+.photo-item img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .15s}
 .photo-item.name-photo{outline:3px solid #f6e05e}
 .name-badge{position:absolute;top:4px;left:4px;background:#f6e05e;color:#000;font-size:.65rem;font-weight:700;padding:2px 5px;border-radius:4px}
-.photo-item:hover img{opacity:.8}
+.photo-item:hover img{opacity:.85}
 .photo-time{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.8));font-size:.6rem;color:#e2e8f0;padding:12px 4px 3px;text-align:center}
 .no-exif{position:absolute;top:4px;right:4px;background:#e53e3e;color:#fff;font-size:.6rem;padding:2px 4px;border-radius:3px}
 .step-badge{display:inline-block;background:#3182ce;color:#fff;border-radius:6px;padding:2px 8px;font-size:.75rem;font-weight:700;margin-right:6px}
@@ -50,162 +55,225 @@ h1{font-size:1.5rem;font-weight:700;margin-bottom:4px;color:#90cdf4}
 .progress-bar{height:6px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden;margin-top:8px}
 .progress-fill{height:100%;background:#3182ce;transition:width .3s}
 .ocr-status{font-size:.82rem;color:#90cdf4;background:rgba(49,130,206,.1);border:1px solid rgba(49,130,206,.2);border-radius:6px;padding:8px 12px;display:none;margin-bottom:8px}
+/* Editor */
+.edit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;padding:4px}
+.edit-item{border-radius:10px;overflow:hidden;border:2px solid transparent;background:#0f3460;transition:border-color .15s;cursor:pointer}
+.edit-item.selected{border-color:#68d391}
+.edit-thumb-wrap{position:relative;aspect-ratio:1;background:#000;overflow:hidden}
+.edit-thumb-wrap img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .2s}
+.sel-badge{position:absolute;top:5px;left:5px;background:#68d391;color:#000;font-size:.7rem;font-weight:700;padding:2px 6px;border-radius:4px;display:none}
+.edit-item.selected .sel-badge{display:block}
+.edit-filename{font-size:.7rem;color:#a0aec0;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.edit-controls{padding:4px 4px 6px;display:none;gap:3px;flex-wrap:wrap;justify-content:center}
+.edit-item.selected .edit-controls{display:flex}
+.edit-controls .btn-xs{font-size:.7rem;padding:3px 6px}
+.edit-sel-count{font-size:.88rem;color:#68d391;font-weight:600}
+/* Common */
+.tip{background:rgba(99,179,237,.1);border:1px solid rgba(99,179,237,.2);border-radius:8px;padding:10px 14px;font-size:.82rem;color:#90cdf4;margin-bottom:12px}
+.browser-warn{background:rgba(229,62,62,.1);border:1px solid rgba(229,62,62,.3);border-radius:8px;padding:10px 14px;font-size:.82rem;color:#fc8181;margin-bottom:12px;display:none}
 .toast-container{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
 .toast{padding:10px 16px;border-radius:8px;font-size:.88rem;color:#fff;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none}
 .toast.show{opacity:1;transform:translateY(0)}
-.toast-success{background:#276749}
-.toast-error{background:#9b2c2c}
-.toast-info{background:#2c5282}
-.tip{background:rgba(99,179,237,.1);border:1px solid rgba(99,179,237,.2);border-radius:8px;padding:10px 14px;font-size:.82rem;color:#90cdf4;margin-bottom:12px}
-.browser-warn{background:rgba(229,62,62,.1);border:1px solid rgba(229,62,62,.3);border-radius:8px;padding:10px 14px;font-size:.82rem;color:#fc8181;margin-bottom:12px;display:none}
+.toast-success{background:#276749}.toast-error{background:#9b2c2c}.toast-info{background:#2c5282}
 </style>
 </head>
 <body>
 <div class="container">
-  <h1>📸 照片整理系統</h1>
-  <p class="subtitle">依時間自動分組 → 自動辨識名字 → 整理到資料夾</p>
+  <h1>📸 照片工具</h1>
 
   <div class="browser-warn" id="browserWarn">
     ⚠️ 此瀏覽器不支援直接寫入資料夾，請改用 Chrome 或 Edge。
   </div>
 
-  <!-- Step 1 -->
-  <div class="card">
-    <div style="margin-bottom:12px"><span class="step-badge">1</span>選取資料夾</div>
-    <div class="upload-zone" id="uploadZone" onclick="selectFolder()">
-      <div class="upload-icon">📁</div>
-      <div class="upload-text" id="uploadText">點擊選取資料夾</div>
-      <div class="upload-hint">需要 Chrome 或 Edge・照片不會上傳，全部在本機處理</div>
-    </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('organizer')">照片整理</button>
+    <button class="tab-btn" onclick="switchTab('editor')">照片編輯</button>
   </div>
 
-  <!-- Step 2 -->
-  <div class="card" id="settingsCard" style="display:none">
-    <div style="margin-bottom:12px"><span class="step-badge">2</span>分組設定</div>
-    <div class="settings-row">
-      <label>時間間隔門檻</label>
-      <input type="number" id="gapMinutes" value="20" min="1" max="120">
-      <span style="font-size:.85rem;color:#a0aec0">分鐘</span>
-      <button class="btn btn-ghost btn-sm" onclick="regroup()">重新分組</button>
-    </div>
-    <div id="loadingBar" style="display:none">
-      <div style="font-size:.82rem;color:#a0aec0;margin-bottom:4px" id="loadingText">讀取 EXIF 中...</div>
-      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
-    </div>
-  </div>
+  <!-- ══ TAB 1: 照片整理 ══ -->
+  <div class="tab-section active" id="tab-organizer">
 
-  <!-- Step 3 -->
-  <div id="groupsSection" style="display:none">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-      <div><span class="step-badge">3</span>確認名字，有需要可手動修改</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <span id="groupStats" style="font-size:.82rem;color:#a0aec0;line-height:2"></span>
-        <button class="btn btn-primary btn-sm" id="autoDetectBtn" onclick="autoDetect()">🔍 自動辨識</button>
-        <button class="btn btn-success" id="organizeBtn" onclick="organizeFiles()" disabled>✅ 整理到資料夾</button>
+    <div class="card">
+      <div style="margin-bottom:12px"><span class="step-badge">1</span>選取資料夾</div>
+      <div class="upload-zone" onclick="selectFolder()">
+        <div class="upload-icon">📁</div>
+        <div class="upload-text" id="uploadText">點擊選取資料夾</div>
+        <div class="upload-hint">需要 Chrome 或 Edge・照片不會上傳，全部在本機處理</div>
       </div>
     </div>
-    <div class="ocr-status" id="ocrStatus"></div>
-    <div class="tip">💡 點選照片可切換名字照・⚠ 標示表示辨識信心較低，請確認・未輸入名字的組別自動以「YYYYMMDD_HHMM」命名</div>
-    <div id="groupsList"></div>
-  </div>
+
+    <div class="card" id="settingsCard" style="display:none">
+      <div style="margin-bottom:12px"><span class="step-badge">2</span>分組設定</div>
+      <div class="settings-row">
+        <label>時間間隔門檻</label>
+        <input type="number" id="gapMinutes" value="20" min="1" max="120">
+        <span style="font-size:.85rem;color:#a0aec0">分鐘</span>
+        <button class="btn btn-ghost btn-sm" onclick="regroup()">重新分組</button>
+      </div>
+      <div id="loadingBar" style="display:none">
+        <div style="font-size:.82rem;color:#a0aec0;margin-bottom:4px" id="loadingText">讀取 EXIF 中...</div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div id="groupsSection" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <div><span class="step-badge">3</span>確認名字，有需要可手動修改</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span id="groupStats" style="font-size:.82rem;color:#a0aec0;line-height:2"></span>
+          <button class="btn btn-primary btn-sm" id="autoDetectBtn" onclick="autoDetect()">🔍 自動辨識</button>
+          <button class="btn btn-success" id="organizeBtn" onclick="organizeFiles()" disabled>✅ 整理到資料夾</button>
+        </div>
+      </div>
+      <div class="ocr-status" id="ocrStatus"></div>
+      <div class="tip">💡 點選照片可切換名字照・⚠ 標示表示辨識信心較低，請確認・未輸入名字的組別自動以「YYYYMMDD_HHMM」命名</div>
+      <div id="groupsList"></div>
+    </div>
+
+  </div><!-- /tab-organizer -->
+
+  <!-- ══ TAB 2: 照片編輯 ══ -->
+  <div class="tab-section" id="tab-editor">
+
+    <div class="card">
+      <div style="margin-bottom:12px"><span class="step-badge">1</span>選取資料夾</div>
+      <div class="upload-zone" onclick="selectEditFolder()">
+        <div class="upload-icon">🖼️</div>
+        <div class="upload-text" id="editUploadText">點擊選取要編輯的資料夾</div>
+        <div class="upload-hint">需要 Chrome 或 Edge</div>
+      </div>
+    </div>
+
+    <div id="editSection" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <div>
+          <span class="step-badge">2</span>點選照片（最多14張），再調整旋轉/鏡像
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span class="edit-sel-count" id="editSelCount">已選 0 / 14</span>
+          <button class="btn btn-ghost btn-sm" onclick="clearEditSelection()">清除選取</button>
+          <button class="btn btn-success" id="saveEditBtn" onclick="saveEditPhotos()" disabled>💾 儲存選取照片</button>
+        </div>
+      </div>
+      <div class="tip">💡 點照片選取 → 選取後出現旋轉/鏡像按鈕 → 縮圖即時預覽 → 儲存到照相日期資料夾</div>
+      <div class="edit-grid" id="editGrid"></div>
+    </div>
+
+  </div><!-- /tab-editor -->
 
   <div class="toast-container" id="toastContainer"></div>
 </div>
 
 <script>
-let allFiles = [];
-let groups = [];
-let dirHandle = null;
-let ocrWorker = null;
+// ════════════════════════════════
+//  SHARED
+// ════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', ['organizer','editor'][i] === name);
+  });
+  document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
 
 if (!window.showDirectoryPicker) {
   document.getElementById('browserWarn').style.display = 'block';
 }
 
-// ── Folder selection ──
-async function selectFolder() {
-  if (!window.showDirectoryPicker) {
-    toast('此瀏覽器不支援直接存檔，請使用 Chrome 或 Edge', 'error'); return;
-  }
-  try {
-    dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
-  } catch(e) {
-    if (e.name !== 'AbortError') toast('無法開啟資料夾：' + e.message, 'error');
-    return;
-  }
-
-  document.getElementById('uploadText').textContent = `已選取：${dirHandle.name}`;
-  const imgFiles = [];
-  try {
-    for await (const [name, handle] of dirHandle) {
-      if (handle.kind !== 'file') continue;
-      if (!/\.(jpe?g|png|heic|heif|webp|bmp|gif|tiff?)$/i.test(name)) continue;
-      imgFiles.push(await handle.getFile());
-    }
-  } catch(e) { toast('讀取資料夾失敗：' + e.message, 'error'); return; }
-
-  if (!imgFiles.length) { toast('資料夾內沒有找到圖片', 'error'); return; }
-  await processFiles(imgFiles);
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmtTime(t, short=false) {
+  if (!t) return '-';
+  const d = new Date(t);
+  if (isNaN(d)) return '-';
+  if (short) return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+function toast(msg, type='info') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`; t.textContent = msg;
+  c.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('show'));
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 3500);
 }
 
-// ── EXIF processing ──
+// ════════════════════════════════
+//  TAB 1 — 照片整理
+// ════════════════════════════════
+let allFiles = [], groups = [], dirHandle = null, ocrWorker = null;
+
+async function selectFolder() {
+  if (!window.showDirectoryPicker) { toast('請使用 Chrome 或 Edge', 'error'); return; }
+  try { dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' }); }
+  catch(e) { if (e.name !== 'AbortError') toast('無法開啟資料夾：' + e.message, 'error'); return; }
+  document.getElementById('uploadText').textContent = `已選取：${dirHandle.name}`;
+  const imgs = [];
+  for await (const [name, handle] of dirHandle) {
+    if (handle.kind !== 'file') continue;
+    if (!/\.(jpe?g|png|heic|heif|webp|bmp|gif|tiff?)$/i.test(name)) continue;
+    imgs.push(await handle.getFile());
+  }
+  if (!imgs.length) { toast('資料夾內沒有找到圖片', 'error'); return; }
+  await processFiles(imgs);
+}
+
 async function processFiles(imgs) {
   document.getElementById('settingsCard').style.display = 'block';
   document.getElementById('loadingBar').style.display = 'block';
   document.getElementById('groupsSection').style.display = 'none';
-
   allFiles = imgs.map((f, i) => ({ file: f, name: f.name, time: null, idx: i }));
-
-  const bar = document.getElementById('progressFill');
-  const txt = document.getElementById('loadingText');
+  const bar = document.getElementById('progressFill'), txt = document.getElementById('loadingText');
   let done = 0;
-  const BATCH = 20;
-  for (let i = 0; i < allFiles.length; i += BATCH) {
-    await Promise.all(allFiles.slice(i, i + BATCH).map(async item => {
+  for (let i = 0; i < allFiles.length; i += 20) {
+    await Promise.all(allFiles.slice(i, i+20).map(async item => {
       try {
-        const exif = await exifr.parse(item.file, ['DateTimeOriginal', 'CreateDate', 'DateTime']);
+        const exif = await exifr.parse(item.file, ['DateTimeOriginal','CreateDate','DateTime']);
         item.time = exif?.DateTimeOriginal || exif?.CreateDate || exif?.DateTime || null;
         if (!item.time) { item.time = new Date(item.file.lastModified); item.noExif = true; }
       } catch(e) { item.time = new Date(item.file.lastModified); item.noExif = true; }
       done++;
-      bar.style.width = Math.round(done / allFiles.length * 100) + '%';
+      bar.style.width = Math.round(done/allFiles.length*100) + '%';
       txt.textContent = `讀取 EXIF 中... ${done}/${allFiles.length}`;
     }));
   }
-
-  allFiles.sort((a, b) => new Date(a.time) - new Date(b.time));
-  allFiles.forEach((f, i) => f.idx = i);
+  allFiles.sort((a,b) => new Date(a.time) - new Date(b.time));
+  allFiles.forEach((f,i) => f.idx = i);
   document.getElementById('loadingBar').style.display = 'none';
   regroup();
 }
 
-// ── Grouping ──
 function regroup() {
   if (!allFiles.length) return;
-  const gap = (parseInt(document.getElementById('gapMinutes').value) || 20) * 60 * 1000;
+  const gap = (parseInt(document.getElementById('gapMinutes').value)||20) * 60000;
   groups = [];
-  let cur = { photos: [allFiles[0]], namePhotoIdx: null, personName: '', lowConf: false };
+  let cur = { photos:[allFiles[0]], namePhotoIdx:null, personName:'', lowConf:false };
   for (let i = 1; i < allFiles.length; i++) {
     if (new Date(allFiles[i].time) - new Date(allFiles[i-1].time) > gap) {
-      groups.push(cur);
-      cur = { photos: [allFiles[i]], namePhotoIdx: null, personName: '', lowConf: false };
+      groups.push(cur); cur = { photos:[allFiles[i]], namePhotoIdx:null, personName:'', lowConf:false };
     } else cur.photos.push(allFiles[i]);
   }
   groups.push(cur);
   renderGroups();
 }
 
-// ── Rendering ──
+function autoGroupName(g) {
+  const d = new Date(g.photos[0]?.time);
+  if (isNaN(d)) return '未知時間';
+  const p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
+}
+
 function renderGroups() {
   document.getElementById('groupsSection').style.display = 'block';
   updateDownloadBtn();
   document.getElementById('groupsList').innerHTML = groups.map((g, gi) => {
-    const first = g.photos[0], last = g.photos[g.photos.length - 1];
-    const timeRange = `${fmtTime(first?.time)} ~ ${fmtTime(last?.time)}`;
+    const first = g.photos[0], last = g.photos[g.photos.length-1];
     return `<div class="group-card" id="gc_${gi}">
       <div class="group-header" id="gh_${gi}">
-        <div class="group-index">${gi + 1}</div>
-        <div class="group-time">${timeRange}</div>
+        <div class="group-index">${gi+1}</div>
+        <div class="group-time">${fmtTime(first?.time)} ~ ${fmtTime(last?.time)}</div>
         <div class="group-count">${g.photos.length} 張</div>
         <input class="group-name-input" placeholder="空白→自動以日期命名"
           value="${escHtml(g.personName)}"
@@ -214,48 +282,40 @@ function renderGroups() {
         ${g.lowConf ? '<span class="conf-warn">⚠ 請確認</span>' : ''}
       </div>
       <div class="photo-grid" id="grid_${gi}">
-        ${g.photos.map((p, pi) => buildThumb(p, gi, pi, g.namePhotoIdx === pi)).join('')}
+        ${g.photos.map((p,pi) => buildThumb(p,gi,pi,g.namePhotoIdx===pi)).join('')}
       </div>
     </div>`;
   }).join('');
-
-  groups.forEach((g, gi) => g.photos.forEach((p, pi) => {
+  groups.forEach((g,gi) => g.photos.forEach((p,pi) => {
     const img = document.getElementById(`thumb_${gi}_${pi}`);
     if (img) img.src = URL.createObjectURL(p.file);
   }));
 }
 
 function buildThumb(p, gi, pi, isName) {
-  return `<div class="photo-item${isName ? ' name-photo' : ''}" id="pi_${gi}_${pi}" onclick="toggleNamePhoto(${gi},${pi})">
+  return `<div class="photo-item${isName?' name-photo':''}" id="pi_${gi}_${pi}" onclick="toggleNamePhoto(${gi},${pi})">
     <img id="thumb_${gi}_${pi}" loading="lazy">
-    ${isName ? '<div class="name-badge">名字</div>' : ''}
-    ${p.noExif ? '<div class="no-exif">無EXIF</div>' : ''}
-    <div class="photo-time">${fmtTime(p.time, true)}</div>
+    ${isName?'<div class="name-badge">名字</div>':''}
+    ${p.noExif?'<div class="no-exif">無EXIF</div>':''}
+    <div class="photo-time">${fmtTime(p.time,true)}</div>
   </div>`;
 }
 
 window.toggleNamePhoto = function(gi, pi) {
   const g = groups[gi];
-  g.namePhotoIdx = (g.namePhotoIdx === pi) ? null : pi;
+  g.namePhotoIdx = (g.namePhotoIdx===pi) ? null : pi;
   const grid = document.getElementById(`grid_${gi}`);
-  grid.innerHTML = g.photos.map((p, idx) => buildThumb(p, gi, idx, g.namePhotoIdx === idx)).join('');
-  g.photos.forEach((p, idx) => {
+  grid.innerHTML = g.photos.map((p,idx) => buildThumb(p,gi,idx,g.namePhotoIdx===idx)).join('');
+  g.photos.forEach((p,idx) => {
     const img = document.getElementById(`thumb_${gi}_${idx}`);
     if (img && !img.src) img.src = URL.createObjectURL(p.file);
   });
   if (g.namePhotoIdx !== null) {
-    const input = document.getElementById('nameInput_' + gi);
+    const input = document.getElementById('nameInput_'+gi);
     if (input && !input.value.trim()) input.focus();
   }
   updateDownloadBtn();
 };
-
-function autoGroupName(g) {
-  const d = new Date(g.photos[0]?.time);
-  if (isNaN(d)) return '未知時間';
-  const pad = n => String(n).padStart(2, '0');
-  return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
-}
 
 function updateDownloadBtn() {
   const named = groups.filter(g => g.personName.trim()).length;
@@ -265,178 +325,294 @@ function updateDownloadBtn() {
   if (btn) btn.disabled = groups.length === 0;
 }
 
-// ── OCR ──
+// OCR
 async function ensureWorker(onProgress) {
   if (ocrWorker) return ocrWorker;
   ocrWorker = await Tesseract.createWorker('chi_tra', 1, {
     logger: m => {
-      if (m.status === 'loading tesseract core' || m.status === 'loading language traineddata') {
-        onProgress(`載入 OCR 語言包 ${Math.round((m.progress || 0) * 100)}%`);
-      }
+      if (m.status==='loading tesseract core'||m.status==='loading language traineddata')
+        onProgress(`載入 OCR 語言包 ${Math.round((m.progress||0)*100)}%`);
     }
   });
   return ocrWorker;
 }
 
 function extractName(data) {
-  // Try word-level (higher precision)
   if (data.words?.length) {
     const cands = data.words
-      .map(w => ({ text: w.text.replace(/[^\u4e00-\u9fff]/g, ''), conf: w.confidence }))
-      .filter(w => w.text.length >= 2 && w.text.length <= 4 && w.conf > 30)
-      .sort((a, b) => b.conf - a.conf);
+      .map(w => ({ text: w.text.replace(/[^\u4e00-\u9fff]/g,''), conf: w.confidence }))
+      .filter(w => w.text.length>=2 && w.text.length<=4 && w.conf>30)
+      .sort((a,b) => b.conf-a.conf);
     if (cands.length) return cands[0];
   }
-  // Fallback: regex on full text
-  const m = (data.text || '').match(/[\u4e00-\u9fff]{2,4}/);
-  if (m) return { text: m[0], conf: data.confidence || 0 };
+  const m = (data.text||'').match(/[\u4e00-\u9fff]{2,4}/);
+  if (m) return { text: m[0], conf: data.confidence||0 };
   return null;
 }
 
 async function autoDetect() {
   const btn = document.getElementById('autoDetectBtn');
   const statusEl = document.getElementById('ocrStatus');
-  btn.disabled = true;
-  statusEl.style.display = 'block';
-  statusEl.textContent = '初始化 OCR...';
-
+  btn.disabled = true; statusEl.style.display = 'block'; statusEl.textContent = '初始化 OCR...';
   try {
     const worker = await ensureWorker(msg => { statusEl.textContent = msg; });
-
     for (let gi = 0; gi < groups.length; gi++) {
       const g = groups[gi];
-      // Skip groups already named by user
       if (g.personName.trim() && !g.lowConf) continue;
-
-      statusEl.textContent = `辨識中... 第 ${gi + 1}/${groups.length} 組`;
-
-      let bestName = null, bestIdx = null, bestConf = 0;
-
+      statusEl.textContent = `辨識中... 第 ${gi+1}/${groups.length} 組`;
+      let bestName=null, bestIdx=null, bestConf=0;
       for (let pi = 0; pi < g.photos.length; pi++) {
         try {
           const { data } = await worker.recognize(g.photos[pi].file);
           const cand = extractName(data);
-          if (cand && cand.conf > bestConf) {
-            bestConf = cand.conf;
-            bestName = cand.text;
-            bestIdx = pi;
-          }
-        } catch(e) { /* skip photo */ }
+          if (cand && cand.conf > bestConf) { bestConf=cand.conf; bestName=cand.text; bestIdx=pi; }
+        } catch(e) {}
       }
-
       if (bestName) {
-        g.personName = bestName;
-        g.namePhotoIdx = bestIdx;
-        g.lowConf = bestConf < 70;
-
-        // Update input field
+        g.personName=bestName; g.namePhotoIdx=bestIdx; g.lowConf=bestConf<70;
         const input = document.getElementById(`nameInput_${gi}`);
         if (input) input.value = bestName;
-
-        // Re-render grid
         const grid = document.getElementById(`grid_${gi}`);
         if (grid) {
-          grid.innerHTML = g.photos.map((p, idx) => buildThumb(p, gi, idx, g.namePhotoIdx === idx)).join('');
-          g.photos.forEach((p, idx) => {
+          grid.innerHTML = g.photos.map((p,idx) => buildThumb(p,gi,idx,g.namePhotoIdx===idx)).join('');
+          g.photos.forEach((p,idx) => {
             const img = document.getElementById(`thumb_${gi}_${idx}`);
             if (img) img.src = URL.createObjectURL(p.file);
           });
         }
-
-        // Update/add low-conf badge in header
         const header = document.getElementById(`gh_${gi}`);
         if (header) {
           header.querySelectorAll('.conf-warn').forEach(el => el.remove());
           if (g.lowConf) {
             const badge = document.createElement('span');
-            badge.className = 'conf-warn';
-            badge.textContent = '⚠ 請確認';
-            header.appendChild(badge);
+            badge.className='conf-warn'; badge.textContent='⚠ 請確認'; header.appendChild(badge);
           }
         }
       }
     }
-
-    statusEl.style.display = 'none';
-    updateDownloadBtn();
-    toast('自動辨識完成，請確認結果', 'success');
-  } catch(e) {
-    statusEl.style.display = 'none';
-    toast('OCR 失敗：' + e.message, 'error');
-    console.error(e);
-  } finally {
-    btn.disabled = false;
-  }
+    statusEl.style.display='none'; updateDownloadBtn(); toast('自動辨識完成，請確認結果','success');
+  } catch(e) { statusEl.style.display='none'; toast('OCR 失敗：'+e.message,'error'); }
+  finally { btn.disabled=false; }
 }
 
-// ── Organize files ──
 async function organizeFiles() {
   if (!groups.length) return;
-  if (!dirHandle) { toast('請先選取資料夾', 'error'); return; }
-
+  if (!dirHandle) { toast('請先選取資料夾','error'); return; }
   const btn = document.getElementById('organizeBtn');
   btn.disabled = true;
-  const total = groups.reduce((s, g) => s + g.photos.length, 0);
+  const total = groups.reduce((s,g) => s+g.photos.length, 0);
   let done = 0;
-
   try {
-    const originalDir = await dirHandle.getDirectoryHandle('原始', { create: true });
-
+    const originalDir = await dirHandle.getDirectoryHandle('原始', { create:true });
     for (const g of groups) {
-      // Unnamed groups use date+time of first photo
       const name = g.personName.trim() || autoGroupName(g);
-      // create:true merges with existing folder of same name
-      const personDir = await dirHandle.getDirectoryHandle(name, { create: true });
-
+      const personDir = await dirHandle.getDirectoryHandle(name, { create:true });
       for (let pi = 0; pi < g.photos.length; pi++) {
         const p = g.photos[pi];
-
-        const fh = await personDir.getFileHandle(p.name, { create: true });
-        const w = await fh.createWritable();
-        await w.write(p.file); await w.close();
-
+        const fh = await personDir.getFileHandle(p.name, { create:true });
+        const w = await fh.createWritable(); await w.write(p.file); await w.close();
         if (pi === g.namePhotoIdx) {
-          const ofh = await originalDir.getFileHandle(p.name, { create: true });
-          const ow = await ofh.createWritable();
-          await ow.write(p.file); await ow.close();
+          const ofh = await originalDir.getFileHandle(p.name, { create:true });
+          const ow = await ofh.createWritable(); await ow.write(p.file); await ow.close();
         }
-
-        done++;
-        btn.textContent = `整理中 ${done}/${total}`;
+        done++; btn.textContent = `整理中 ${done}/${total}`;
       }
     }
+    const named=groups.filter(g=>g.personName.trim()).length, auto=groups.length-named;
+    toast(`整理完成！${named} 位命名、${auto>0?auto+' 組日期命名、':''}共 ${total} 張`,'success');
+  } catch(e) { toast('整理失敗：'+e.message,'error'); }
+  finally { btn.textContent='✅ 整理到資料夾'; updateDownloadBtn(); }
+}
 
-    const named = groups.filter(g => g.personName.trim()).length;
-    const auto = groups.length - named;
-    toast(`整理完成！${named} 位命名、${auto > 0 ? auto + ' 組日期命名、' : ''}共 ${total} 張`, 'success');
-  } catch(e) {
-    toast('整理失敗：' + e.message, 'error');
-  } finally {
-    btn.textContent = '✅ 整理到資料夾';
-    updateDownloadBtn();
+// ════════════════════════════════
+//  TAB 2 — 照片編輯
+// ════════════════════════════════
+let editDirHandle = null;
+let editFiles = [];       // [{file, name, time, url}]
+let editSelected = new Set();
+let editTransforms = {};  // idx -> {rotation:0, flipH:false, flipV:false}
+const MAX_SEL = 14;
+
+async function selectEditFolder() {
+  if (!window.showDirectoryPicker) { toast('請使用 Chrome 或 Edge','error'); return; }
+  try { editDirHandle = await window.showDirectoryPicker({ mode:'readwrite' }); }
+  catch(e) { if (e.name!=='AbortError') toast('無法開啟資料夾：'+e.message,'error'); return; }
+  document.getElementById('editUploadText').textContent = `已選取：${editDirHandle.name}`;
+  const imgs = [];
+  for await (const [name, handle] of editDirHandle) {
+    if (handle.kind !== 'file') continue;
+    if (!/\.(jpe?g|png|heic|heif|webp|bmp|gif|tiff?)$/i.test(name)) continue;
+    const file = await handle.getFile();
+    imgs.push({ file, name });
   }
+  if (!imgs.length) { toast('資料夾內沒有找到圖片','error'); return; }
+  // Read EXIF for date
+  for (const item of imgs) {
+    try {
+      const exif = await exifr.parse(item.file, ['DateTimeOriginal','CreateDate','DateTime']);
+      item.time = exif?.DateTimeOriginal || exif?.CreateDate || exif?.DateTime || new Date(item.file.lastModified);
+    } catch(e) { item.time = new Date(item.file.lastModified); }
+  }
+  imgs.sort((a,b) => new Date(a.time)-new Date(b.time));
+  editFiles = imgs.map((f,i) => ({...f, idx:i}));
+  editSelected = new Set();
+  editTransforms = {};
+  renderEditGrid();
+  document.getElementById('editSection').style.display = 'block';
+  updateEditSelCount();
 }
 
-// ── Utils ──
-function fmtTime(t, short = false) {
-  if (!t) return '-';
-  const d = new Date(t);
-  if (isNaN(d)) return '-';
-  if (short) return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-  return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+function renderEditGrid() {
+  document.getElementById('editGrid').innerHTML = editFiles.map(f => `
+    <div class="edit-item${editSelected.has(f.idx)?' selected':''}" id="ei_${f.idx}" onclick="toggleEditSelect(${f.idx})">
+      <div class="edit-thumb-wrap">
+        <img id="et_${f.idx}" loading="lazy" style="transform:${cssTransform(editTransforms[f.idx])}">
+        <div class="sel-badge" id="esb_${f.idx}">${selOrder(f.idx)}</div>
+      </div>
+      <div class="edit-filename" title="${escHtml(f.name)}">${escHtml(f.name)}</div>
+      <div class="edit-controls" id="ec_${f.idx}">
+        <button class="btn btn-ghost btn-xs" title="順時鐘90°" onclick="event.stopPropagation();applyEdit(${f.idx},'cw')">↻</button>
+        <button class="btn btn-ghost btn-xs" title="逆時鐘90°" onclick="event.stopPropagation();applyEdit(${f.idx},'ccw')">↺</button>
+        <button class="btn btn-ghost btn-xs" title="左右鏡像" onclick="event.stopPropagation();applyEdit(${f.idx},'flipH')">↔</button>
+        <button class="btn btn-ghost btn-xs" title="上下鏡像" onclick="event.stopPropagation();applyEdit(${f.idx},'flipV')">↕</button>
+      </div>
+    </div>`).join('');
+  editFiles.forEach(f => {
+    const img = document.getElementById(`et_${f.idx}`);
+    if (img) img.src = URL.createObjectURL(f.file);
+  });
 }
 
-function escHtml(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+// Maintain ordered selection for badge numbering
+let editSelOrder = [];
+function selOrder(idx) {
+  const pos = editSelOrder.indexOf(idx);
+  return pos >= 0 ? pos+1 : '';
 }
 
-function toast(msg, type = 'info') {
-  const c = document.getElementById('toastContainer');
-  const t = document.createElement('div');
-  t.className = `toast toast-${type}`; t.textContent = msg;
-  c.appendChild(t);
-  requestAnimationFrame(() => t.classList.add('show'));
-  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 3500);
+window.toggleEditSelect = function(idx) {
+  if (editSelected.has(idx)) {
+    editSelected.delete(idx);
+    editSelOrder = editSelOrder.filter(i => i !== idx);
+  } else {
+    if (editSelected.size >= MAX_SEL) { toast(`最多選 ${MAX_SEL} 張`,'error'); return; }
+    editSelected.add(idx);
+    editSelOrder.push(idx);
+  }
+  const item = document.getElementById(`ei_${idx}`);
+  if (item) item.classList.toggle('selected', editSelected.has(idx));
+  const controls = document.getElementById(`ec_${idx}`);
+  if (controls) controls.style.display = editSelected.has(idx) ? 'flex' : 'none';
+  // Refresh all badges (order may have changed)
+  editSelOrder.forEach((i, pos) => {
+    const b = document.getElementById(`esb_${i}`);
+    if (b) b.textContent = pos+1;
+  });
+  const removedBadge = document.getElementById(`esb_${idx}`);
+  if (removedBadge && !editSelected.has(idx)) removedBadge.textContent = '';
+  updateEditSelCount();
+};
+
+window.applyEdit = function(idx, type) {
+  if (!editTransforms[idx]) editTransforms[idx] = { rotation:0, flipH:false, flipV:false };
+  const t = editTransforms[idx];
+  if (type==='cw')   t.rotation = (t.rotation+90) % 360;
+  if (type==='ccw')  t.rotation = (t.rotation+270) % 360;
+  if (type==='flipH') t.flipH = !t.flipH;
+  if (type==='flipV') t.flipV = !t.flipV;
+  const img = document.getElementById(`et_${idx}`);
+  if (img) img.style.transform = cssTransform(t);
+};
+
+function cssTransform(t) {
+  if (!t) return 'none';
+  const parts = [];
+  if (t.rotation) parts.push(`rotate(${t.rotation}deg)`);
+  if (t.flipH) parts.push('scaleX(-1)');
+  if (t.flipV) parts.push('scaleY(-1)');
+  return parts.length ? parts.join(' ') : 'none';
+}
+
+function clearEditSelection() {
+  editSelected.clear(); editSelOrder = [];
+  document.querySelectorAll('.edit-item').forEach(el => el.classList.remove('selected'));
+  document.querySelectorAll('.edit-controls').forEach(el => el.style.display='none');
+  document.querySelectorAll('[id^="esb_"]').forEach(el => el.textContent='');
+  updateEditSelCount();
+}
+
+function updateEditSelCount() {
+  const n = editSelected.size;
+  document.getElementById('editSelCount').textContent = `已選 ${n} / ${MAX_SEL}`;
+  document.getElementById('saveEditBtn').disabled = n === 0;
+}
+
+async function applyTransformCanvas(file, t) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const r = t.rotation || 0;
+      const swapped = r===90 || r===270;
+      const canvas = document.createElement('canvas');
+      canvas.width  = swapped ? img.height : img.width;
+      canvas.height = swapped ? img.width  : img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.translate(canvas.width/2, canvas.height/2);
+      ctx.rotate(r * Math.PI/180);
+      if (t.flipH) ctx.scale(-1, 1);
+      if (t.flipV) ctx.scale(1, -1);
+      ctx.drawImage(img, -img.width/2, -img.height/2);
+      URL.revokeObjectURL(img.src);
+      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('canvas empty')), 'image/jpeg', 0.95);
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+async function saveEditPhotos() {
+  if (!editSelected.size) return;
+  if (!editDirHandle) { toast('請先選取資料夾','error'); return; }
+  const btn = document.getElementById('saveEditBtn');
+  btn.disabled = true;
+
+  // Determine folder name from EXIF date of first selected photo (by order)
+  const firstIdx = editSelOrder[0] ?? [...editSelected][0];
+  const dateObj = new Date(editFiles[firstIdx]?.time);
+  const p = n => String(n).padStart(2,'0');
+  const folderName = isNaN(dateObj)
+    ? `照片_${Date.now()}`
+    : `${dateObj.getFullYear()}${p(dateObj.getMonth()+1)}${p(dateObj.getDate())}`;
+
+  const total = editSelected.size;
+  let done = 0;
+  try {
+    const outDir = await editDirHandle.getDirectoryHandle(folderName, { create:true });
+    for (const idx of editSelOrder.length ? editSelOrder : [...editSelected]) {
+      const f = editFiles[idx];
+      const t = editTransforms[idx] || { rotation:0, flipH:false, flipV:false };
+      const needTransform = t.rotation || t.flipH || t.flipV;
+      let blob;
+      if (needTransform) {
+        blob = await applyTransformCanvas(f.file, t);
+      } else {
+        blob = f.file;
+      }
+      // Use .jpg extension for transformed files
+      const outName = needTransform
+        ? f.name.replace(/\.[^.]+$/, '.jpg')
+        : f.name;
+      const fh = await outDir.getFileHandle(outName, { create:true });
+      const w = await fh.createWritable(); await w.write(blob); await w.close();
+      done++; btn.textContent = `儲存中 ${done}/${total}`;
+    }
+    toast(`已儲存 ${total} 張到「${folderName}」資料夾`,'success');
+  } catch(e) {
+    toast('儲存失敗：'+e.message,'error');
+  } finally {
+    btn.textContent = '💾 儲存選取照片';
+    updateEditSelCount();
+  }
 }
 </script>
 </body>
