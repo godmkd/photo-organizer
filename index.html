@@ -215,7 +215,7 @@ h1{font-size:1.4rem;font-weight:700;color:#90cdf4;margin-bottom:14px}
             <div><span class="step-badge">3</span>確認名字</div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
               <span id="groupStats" style="font-size:.8rem;color:#a0aec0;line-height:2"></span>
-              <button class="btn btn-ghost btn-sm" id="mergeCheckedBtn" onclick="mergeChecked()" disabled>⊕ 合併勾選</button>
+              <button class="btn btn-success btn-sm" id="mergeCheckedBtn" onclick="mergeChecked()" disabled>📁 合併並建立資料夾</button>
               <button class="btn btn-primary btn-sm" id="autoDetectBtn" onclick="autoDetect()">🔍 自動辨識</button>
               <button class="btn btn-success btn-sm" id="organizeBtn" onclick="organizeFiles('named')" disabled>✅ 整理（已選名字照）</button>
               <button class="btn btn-warn btn-sm" id="organizeUnnamedBtn" onclick="organizeFiles('unnamed')" disabled>📁 整理（未選名字照）</button>
@@ -634,17 +634,22 @@ function updateOrgBtns() {
   if(stats)stats.textContent=`${groups.length} 組 | 已命名 ${named} 組`;
 }
 
+function getCheckedGroups(){
+  return [...document.querySelectorAll('.merge-check:checked')].map(cb=>+cb.dataset.gi).sort((a,b)=>a-b);
+}
+
 function updateMergeBtn(){
-  const checked=document.querySelectorAll('.merge-check:checked');
+  const checked=getCheckedGroups();
   const btn=document.getElementById('mergeCheckedBtn');
   if(!btn)return;
   btn.disabled=checked.length<2;
-  btn.textContent=checked.length>=2?`⊕ 合併勾選 (${checked.length})`:'⊕ 合併勾選';
+  btn.textContent=checked.length>=2?`📁 合併並建立資料夾 (${checked.length})`:'📁 合併並建立資料夾';
 }
 
-window.mergeChecked = function() {
-  const checked=[...document.querySelectorAll('.merge-check:checked')].map(cb=>+cb.dataset.gi).sort((a,b)=>a-b);
+window.mergeChecked = async function() {
+  const checked=getCheckedGroups();
   if(checked.length<2){toast('請勾選至少 2 組','info');return;}
+  // 合併到第一個勾選的組
   const target=groups[checked[0]];
   for(let i=1;i<checked.length;i++){
     const src=groups[checked[i]];
@@ -653,10 +658,12 @@ window.mergeChecked = function() {
   }
   target.photos.sort((a,b)=>new Date(a.time)-new Date(b.time));
   target.namePhotoIdx=null;
-  // 從後往前刪除，避免 index 錯位
   for(let i=checked.length-1;i>=1;i--) groups.splice(checked[i],1);
+  // 合併後直接建立資料夾
+  const newGi=groups.indexOf(target);
   renderGroups();
-  toast(`已合併 ${checked.length} 組`,'success');
+  toast(`已合併 ${checked.length} 組，開始建立資料夾...`,'info');
+  await organizeSingleGroup(newGi);
 };
 
 // OCR
