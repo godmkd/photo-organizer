@@ -215,7 +215,7 @@ h1{font-size:1.4rem;font-weight:700;color:#90cdf4;margin-bottom:14px}
             <div><span class="step-badge">3</span>確認名字</div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
               <span id="groupStats" style="font-size:.8rem;color:#a0aec0;line-height:2"></span>
-              <button class="btn btn-ghost btn-sm" id="mergeCheckedBtn" onclick="mergeChecked()" style="display:none">⊕ 合併勾選</button>
+              <button class="btn btn-ghost btn-sm" id="mergeCheckedBtn" onclick="mergeChecked()" disabled>⊕ 合併勾選</button>
               <button class="btn btn-primary btn-sm" id="autoDetectBtn" onclick="autoDetect()">🔍 自動辨識</button>
               <button class="btn btn-success btn-sm" id="organizeBtn" onclick="organizeFiles('named')" disabled>✅ 整理（已選名字照）</button>
               <button class="btn btn-warn btn-sm" id="organizeUnnamedBtn" onclick="organizeFiles('unnamed')" disabled>📁 整理（未選名字照）</button>
@@ -637,8 +637,9 @@ function updateOrgBtns() {
 function updateMergeBtn(){
   const checked=document.querySelectorAll('.merge-check:checked');
   const btn=document.getElementById('mergeCheckedBtn');
-  btn.style.display=checked.length>=2?'inline-block':'none';
-  btn.textContent=`⊕ 合併勾選 (${checked.length})`;
+  if(!btn)return;
+  btn.disabled=checked.length<2;
+  btn.textContent=checked.length>=2?`⊕ 合併勾選 (${checked.length})`:'⊕ 合併勾選';
 }
 
 window.mergeChecked = function() {
