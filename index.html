@@ -320,6 +320,13 @@ h1{font-size:1.4rem;font-weight:700;color:#90cdf4;margin-bottom:14px}
                   <option value="yellow">黃色</option>
                 </select>
               </div>
+              <div style="min-width:140px">
+                <label style="font-size:.82rem;color:#a0aec0;display:block;margin-bottom:4px">字體</label>
+                <select id="wmFont" onchange="updateWmPreview()" style="padding:5px 6px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#e2e8f0;font-size:.85rem;max-width:200px">
+                  <option value="sans-serif">預設（系統）</option>
+                </select>
+                <div style="font-size:.65rem;color:#718096;margin-top:2px">載入本機字體中...</div>
+              </div>
             </div>
             <div>
               <label style="font-size:.82rem;color:#a0aec0;display:block;margin-bottom:6px">位置（九宮格）</label>
@@ -1155,6 +1162,40 @@ renderSidebar();
 // ════════════════════════════════
 let wmDirHandle=null, wmFiles=[], wmSelected=new Set(), wmPosition='mc';
 
+// Load local fonts via Local Font Access API or fallback to known macOS fonts
+(async function loadFonts(){
+  const sel=document.getElementById('wmFont');
+  if(!sel)return;
+  if('queryLocalFonts' in window){
+    try{
+      const fonts=await window.queryLocalFonts();
+      const seen=new Set();
+      const families=[];
+      fonts.forEach(f=>{
+        if(!seen.has(f.family)){seen.add(f.family);families.push(f.family);}
+      });
+      families.sort((a,b)=>a.localeCompare(b));
+      sel.innerHTML=families.map(f=>`<option value="${escHtml(f)}" style="font-family:'${escHtml(f)}'">${escHtml(f)}</option>`).join('');
+      sel.parentElement.querySelector('div').textContent=`${families.length} 個字體`;
+    }catch(e){loadFallbackFonts(sel);}
+  }else{loadFallbackFonts(sel);}
+})();
+
+function loadFallbackFonts(sel){
+  const macFonts=[
+    'Arial','Arial Unicode MS','Avenir','Avenir Next','Avenir Next Condensed',
+    'Courier','Courier New','Geneva','Georgia','Helvetica','Helvetica Neue',
+    'Hiragino Sans','Hiragino Sans GB','Hiragino Maru Gothic ProN','Hiragino Mincho ProN',
+    'Lucida Grande','Marker Felt','Menlo','Monaco','Noteworthy',
+    'Optima','Palatino','PingFang TC','PingFang SC','PingFang HK',
+    'SF Pro','SF Pro Display','SF Pro Rounded','SF Pro Text',
+    'Songti TC','Songti SC','STHeiti','STKaiti','STSong',
+    'Times','Times New Roman','Trebuchet MS','Verdana'
+  ];
+  sel.innerHTML=macFonts.map(f=>`<option value="${f}" style="font-family:'${f}'">${f}</option>`).join('');
+  sel.parentElement.querySelector('div').textContent='常用 macOS 字體';
+}
+
 async function selectWmFolder(){
   if(!window.showDirectoryPicker){toast('請使用 Chrome 或 Edge','error');return;}
   try{wmDirHandle=await window.showDirectoryPicker({mode:'readwrite'});}
@@ -1245,6 +1286,7 @@ function getWmConfig(){
     fontSize:parseInt(document.getElementById('wmFontSize').value)||48,
     opacity:(parseInt(document.getElementById('wmOpacity').value)||30)/100,
     color:document.getElementById('wmColor').value||'white',
+    font:document.getElementById('wmFont').value||'sans-serif',
     position:wmPosition
   };
 }
@@ -1261,7 +1303,7 @@ function updateWmPreview(){
   if(!cfg.text)return;
   const scale=c.width/800;
   const fs=Math.round(cfg.fontSize*scale);
-  ctx.font=`bold ${fs}px sans-serif`;
+  ctx.font=`bold ${fs}px '${cfg.font}', sans-serif`;
   ctx.globalAlpha=cfg.opacity;
   const colorMap={white:'#ffffff',black:'#000000',red:'#ff4444',yellow:'#ffdd00'};
   ctx.fillStyle=colorMap[cfg.color]||'#ffffff';
@@ -1311,7 +1353,7 @@ function addWatermarkToFile(file,cfg){
       URL.revokeObjectURL(img.src);
       // Draw watermark
       const fs=cfg.fontSize;
-      ctx.font=`bold ${fs}px sans-serif`;
+      ctx.font=`bold ${fs}px '${cfg.font}', sans-serif`;
       ctx.globalAlpha=cfg.opacity;
       const colorMap={white:'#ffffff',black:'#000000',red:'#ff4444',yellow:'#ffdd00'};
       ctx.fillStyle=colorMap[cfg.color]||'#ffffff';
