@@ -108,6 +108,9 @@ h1{font-size:1.4rem;font-weight:700;color:#90cdf4;margin-bottom:14px}
 .folder-tree-item .tree-icon{flex-shrink:0}
 .folder-tree-item .tree-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .folder-tree-children{padding-left:16px}
+/* Watermark position */
+.wm-pos{font-size:.65rem!important;padding:6px 2px!important;text-align:center;white-space:nowrap}
+.wm-pos.active{background:#3182ce!important;color:#fff!important;border-color:#3182ce!important}
 /* Lightbox */
 .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:10000;display:flex;align-items:center;justify-content:center;cursor:zoom-out;opacity:0;transition:opacity .2s;pointer-events:none}
 .lightbox.show{opacity:1;pointer-events:auto}
@@ -182,6 +185,7 @@ h1{font-size:1.4rem;font-weight:700;color:#90cdf4;margin-bottom:14px}
       <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('organizer')">照片整理</button>
         <button class="tab-btn" onclick="switchTab('editor')">照片編輯</button>
+        <button class="tab-btn" onclick="switchTab('watermark')">浮水印</button>
       </div>
 
       <!-- TAB 1: 照片整理 -->
@@ -273,6 +277,87 @@ h1{font-size:1.4rem;font-weight:700;color:#90cdf4;margin-bottom:14px}
 
       </div><!-- /tab-editor -->
 
+      <!-- TAB 3: 浮水印 -->
+      <div class="tab-section" id="tab-watermark">
+
+        <div class="card">
+          <div style="margin-bottom:10px"><span class="step-badge">1</span>選取照片</div>
+          <div class="upload-zone" onclick="selectWmFolder()">
+            <div class="upload-icon">💧</div>
+            <div class="upload-text" id="wmUploadText">點擊選取資料夾</div>
+            <div class="upload-hint" id="wmUploadHint">需要 Chrome 或 Edge・選取後顯示所有照片</div>
+          </div>
+        </div>
+
+        <div id="wmSection" style="display:none">
+          <div class="card">
+            <div style="margin-bottom:9px"><span class="step-badge">2</span>浮水印設定</div>
+            <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px">
+              <div style="flex:1;min-width:180px">
+                <label style="font-size:.82rem;color:#a0aec0;display:block;margin-bottom:4px">文字內容</label>
+                <input type="text" id="wmText" value="" placeholder="輸入浮水印文字" oninput="updateWmPreview()"
+                  style="width:100%;padding:5px 9px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#e2e8f0;font-size:.85rem">
+              </div>
+              <div style="min-width:80px">
+                <label style="font-size:.82rem;color:#a0aec0;display:block;margin-bottom:4px">字體大小</label>
+                <input type="number" id="wmFontSize" value="48" min="10" max="200" oninput="updateWmPreview()"
+                  style="width:80px;padding:5px 6px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#e2e8f0;font-size:.85rem">
+              </div>
+              <div style="min-width:80px">
+                <label style="font-size:.82rem;color:#a0aec0;display:block;margin-bottom:4px">透明度</label>
+                <div style="display:flex;align-items:center;gap:6px">
+                  <input type="range" id="wmOpacity" value="30" min="5" max="100" oninput="document.getElementById('wmOpVal').textContent=this.value+'%';updateWmPreview()"
+                    style="flex:1">
+                  <span id="wmOpVal" style="font-size:.78rem;color:#a0aec0;min-width:32px">30%</span>
+                </div>
+              </div>
+              <div style="min-width:80px">
+                <label style="font-size:.82rem;color:#a0aec0;display:block;margin-bottom:4px">顏色</label>
+                <select id="wmColor" onchange="updateWmPreview()" style="padding:5px 6px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#e2e8f0;font-size:.85rem">
+                  <option value="white">白色</option>
+                  <option value="black">黑色</option>
+                  <option value="red">紅色</option>
+                  <option value="yellow">黃色</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label style="font-size:.82rem;color:#a0aec0;display:block;margin-bottom:6px">位置（九宮格）</label>
+              <div id="wmPosGrid" style="display:inline-grid;grid-template-columns:repeat(3,44px);gap:4px">
+                <button class="btn btn-ghost btn-xs wm-pos" data-pos="tl" onclick="setWmPos('tl',this)">↖ 左上</button>
+                <button class="btn btn-ghost btn-xs wm-pos" data-pos="tc" onclick="setWmPos('tc',this)">↑ 上中</button>
+                <button class="btn btn-ghost btn-xs wm-pos" data-pos="tr" onclick="setWmPos('tr',this)">↗ 右上</button>
+                <button class="btn btn-ghost btn-xs wm-pos" data-pos="ml" onclick="setWmPos('ml',this)">← 左中</button>
+                <button class="btn btn-ghost btn-xs wm-pos active" data-pos="mc" onclick="setWmPos('mc',this)">● 中間</button>
+                <button class="btn btn-ghost btn-xs wm-pos" data-pos="mr" onclick="setWmPos('mr',this)">→ 右中</button>
+                <button class="btn btn-ghost btn-xs wm-pos" data-pos="bl" onclick="setWmPos('bl',this)">↙ 左下</button>
+                <button class="btn btn-ghost btn-xs wm-pos" data-pos="bc" onclick="setWmPos('bc',this)">↓ 下中</button>
+                <button class="btn btn-ghost btn-xs wm-pos" data-pos="br" onclick="setWmPos('br',this)">↘ 右下</button>
+              </div>
+            </div>
+            <div style="margin-top:10px">
+              <label style="font-size:.82rem;color:#a0aec0;display:block;margin-bottom:4px">預覽</label>
+              <div id="wmPreviewWrap" style="position:relative;display:inline-block;background:#333;border-radius:6px;overflow:hidden;max-width:300px">
+                <canvas id="wmPreviewCanvas" width="300" height="200" style="display:block;width:100%"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:7px">
+            <div><span class="step-badge">3</span>選擇照片並套用</div>
+            <div style="display:flex;gap:7px;align-items:center">
+              <span id="wmSelCount" style="font-size:.85rem;color:#68d391;font-weight:600">已選 0 張</span>
+              <button class="btn btn-ghost btn-sm" onclick="wmSelectAll()">全選</button>
+              <button class="btn btn-ghost btn-sm" onclick="wmClearSel()">清除</button>
+              <button class="btn btn-success btn-sm" id="wmApplyBtn" onclick="applyWatermark()" disabled>💧 套用浮水印</button>
+            </div>
+          </div>
+          <div class="tip">💡 點擊照片選取 → 設定浮水印參數 → 套用後儲存到同資料夾（覆蓋原檔）</div>
+          <div class="edit-grid" id="wmGrid"></div>
+        </div>
+
+      </div><!-- /tab-watermark -->
+
     </div><!-- /main -->
   </div><!-- /layout -->
 
@@ -291,7 +376,7 @@ h1{font-size:1.4rem;font-weight:700;color:#90cdf4;margin-bottom:14px}
 //  SHARED UTILS
 // ════════════════════════════════
 function switchTab(name) {
-  ['organizer','editor'].forEach((n,i)=>{
+  ['organizer','editor','watermark'].forEach((n,i)=>{
     document.querySelectorAll('.tab-btn')[i].classList.toggle('active',n===name);
     document.getElementById('tab-'+n).classList.toggle('active',n===name);
   });
@@ -1064,6 +1149,188 @@ async function saveEditPhotos(){
 
 // Init: restore sidebar from localStorage
 renderSidebar();
+
+// ════════════════════════════════
+//  TAB 3 — 浮水印
+// ════════════════════════════════
+let wmDirHandle=null, wmFiles=[], wmSelected=new Set(), wmPosition='mc';
+
+async function selectWmFolder(){
+  if(!window.showDirectoryPicker){toast('請使用 Chrome 或 Edge','error');return;}
+  try{wmDirHandle=await window.showDirectoryPicker({mode:'readwrite'});}
+  catch(e){if(e.name!=='AbortError')toast('無法開啟：'+e.message,'error');return;}
+  document.getElementById('wmUploadText').textContent=`📁 ${wmDirHandle.name}`;
+  document.getElementById('wmUploadHint').innerHTML=`<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();selectWmFolder()">換資料夾</button>`;
+  const imgs=[];
+  for await(const[name,handle]of wmDirHandle){
+    if(handle.kind!=='file')continue;
+    if(!/\.(jpe?g|png|webp|bmp)$/i.test(name))continue;
+    const file=await handle.getFile();imgs.push({file,name,handle});
+  }
+  if(!imgs.length){toast('沒有找到圖片','error');return;}
+  imgs.sort((a,b)=>a.name.localeCompare(b.name));
+  wmFiles=imgs;wmSelected=new Set();
+  renderWmGrid();
+  document.getElementById('wmSection').style.display='block';
+  updateWmSelCount();
+  updateWmPreview();
+}
+
+function renderWmGrid(){
+  const obs=ensureThumbObserver();
+  document.getElementById('wmGrid').innerHTML=wmFiles.map((f,i)=>`
+    <div class="edit-item${wmSelected.has(i)?' selected':''}" onclick="toggleWmSelect(${i})">
+      <div class="edit-thumb-wrap">
+        <img id="wmt_${i}" loading="lazy" data-ei="${i}">
+        <div class="sel-badge" id="wmsb_${i}">${wmSelected.has(i)?'✓':''}</div>
+      </div>
+      <div class="edit-filename" title="${escHtml(f.name)}">${escHtml(f.name)}</div>
+    </div>`).join('');
+  // Reuse thumb observer — data-ei maps to editFiles for lazy load, but we need wmFiles
+  // Override: manually observe with wmFiles
+  wmFiles.forEach((f,i)=>{
+    const img=document.getElementById('wmt_'+i);
+    if(!img)return;
+    const wmObs=new IntersectionObserver((entries)=>{
+      entries.forEach(entry=>{
+        if(entry.isIntersecting){
+          if(!img.src||!img.src.startsWith('blob:'))img.src=URL.createObjectURL(f.file);
+        }else{
+          const s=img.src;if(s&&s.startsWith('blob:')){URL.revokeObjectURL(s);img.removeAttribute('src');}
+        }
+      });
+    },{rootMargin:'200px'});
+    wmObs.observe(img);
+  });
+}
+
+window.toggleWmSelect=function(i){
+  if(wmSelected.has(i))wmSelected.delete(i);else wmSelected.add(i);
+  const item=document.getElementById('wmt_'+i)?.closest('.edit-item');
+  if(item)item.classList.toggle('selected',wmSelected.has(i));
+  const badge=document.getElementById('wmsb_'+i);
+  if(badge)badge.textContent=wmSelected.has(i)?'✓':'';
+  updateWmSelCount();
+};
+
+window.wmSelectAll=function(){
+  wmFiles.forEach((_,i)=>wmSelected.add(i));
+  document.querySelectorAll('#wmGrid .edit-item').forEach(el=>el.classList.add('selected'));
+  wmFiles.forEach((_,i)=>{const b=document.getElementById('wmsb_'+i);if(b)b.textContent='✓';});
+  updateWmSelCount();
+};
+
+window.wmClearSel=function(){
+  wmSelected.clear();
+  document.querySelectorAll('#wmGrid .edit-item').forEach(el=>el.classList.remove('selected'));
+  wmFiles.forEach((_,i)=>{const b=document.getElementById('wmsb_'+i);if(b)b.textContent='';});
+  updateWmSelCount();
+};
+
+function updateWmSelCount(){
+  document.getElementById('wmSelCount').textContent=`已選 ${wmSelected.size} 張`;
+  document.getElementById('wmApplyBtn').disabled=wmSelected.size===0||!document.getElementById('wmText').value.trim();
+}
+
+window.setWmPos=function(pos,el){
+  wmPosition=pos;
+  document.querySelectorAll('.wm-pos').forEach(b=>b.classList.remove('active'));
+  if(el)el.classList.add('active');
+  updateWmPreview();
+};
+
+function getWmConfig(){
+  return{
+    text:document.getElementById('wmText').value.trim(),
+    fontSize:parseInt(document.getElementById('wmFontSize').value)||48,
+    opacity:(parseInt(document.getElementById('wmOpacity').value)||30)/100,
+    color:document.getElementById('wmColor').value||'white',
+    position:wmPosition
+  };
+}
+
+function updateWmPreview(){
+  const c=document.getElementById('wmPreviewCanvas');
+  const ctx=c.getContext('2d');
+  const cfg=getWmConfig();
+  // Draw sample background
+  ctx.fillStyle='#555';ctx.fillRect(0,0,c.width,c.height);
+  ctx.fillStyle='#444';
+  ctx.fillRect(20,30,80,60);ctx.fillRect(120,50,100,80);ctx.fillRect(200,20,60,40);
+  // Draw watermark
+  if(!cfg.text)return;
+  const scale=c.width/800;
+  const fs=Math.round(cfg.fontSize*scale);
+  ctx.font=`bold ${fs}px sans-serif`;
+  ctx.globalAlpha=cfg.opacity;
+  const colorMap={white:'#ffffff',black:'#000000',red:'#ff4444',yellow:'#ffdd00'};
+  ctx.fillStyle=colorMap[cfg.color]||'#ffffff';
+  ctx.textBaseline='middle';ctx.textAlign='center';
+  const tw=ctx.measureText(cfg.text).width;
+  const pad=10*scale;
+  let x,y;
+  const pos=cfg.position;
+  if(pos[1]==='l')x=pad+tw/2; else if(pos[1]==='r')x=c.width-pad-tw/2; else x=c.width/2;
+  if(pos[0]==='t')y=pad+fs/2; else if(pos[0]==='b')y=c.height-pad-fs/2; else y=c.height/2;
+  ctx.fillText(cfg.text,x,y);
+  ctx.globalAlpha=1;
+  updateWmSelCount();
+}
+
+async function applyWatermark(){
+  const cfg=getWmConfig();
+  if(!cfg.text){toast('請輸入浮水印文字','error');return;}
+  if(!wmSelected.size){toast('請選擇照片','error');return;}
+  if(!wmDirHandle){toast('請先選取資料夾','error');return;}
+  const btn=document.getElementById('wmApplyBtn');
+  btn.disabled=true;
+  const total=wmSelected.size;let done=0;
+  try{
+    for(const i of wmSelected){
+      const f=wmFiles[i];
+      const blob=await addWatermarkToFile(f.file,cfg);
+      // Write back to same file
+      const fh=await wmDirHandle.getFileHandle(f.name,{create:true});
+      const w=await fh.createWritable();await w.write(blob);await w.close();
+      done++;
+      btn.textContent=`💧 ${done}/${total}`;
+    }
+    toast(`浮水印完成！${total} 張照片`,'success');
+  }catch(e){toast('浮水印失敗：'+e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='💧 套用浮水印';}
+}
+
+function addWatermarkToFile(file,cfg){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=()=>{
+      const canvas=document.createElement('canvas');
+      canvas.width=img.width;canvas.height=img.height;
+      const ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0);
+      URL.revokeObjectURL(img.src);
+      // Draw watermark
+      const fs=cfg.fontSize;
+      ctx.font=`bold ${fs}px sans-serif`;
+      ctx.globalAlpha=cfg.opacity;
+      const colorMap={white:'#ffffff',black:'#000000',red:'#ff4444',yellow:'#ffdd00'};
+      ctx.fillStyle=colorMap[cfg.color]||'#ffffff';
+      ctx.textBaseline='middle';ctx.textAlign='center';
+      const tw=ctx.measureText(cfg.text).width;
+      const pad=fs*0.5;
+      let x,y;
+      const pos=cfg.position;
+      if(pos[1]==='l')x=pad+tw/2; else if(pos[1]==='r')x=canvas.width-pad-tw/2; else x=canvas.width/2;
+      if(pos[0]==='t')y=pad+fs/2; else if(pos[0]==='b')y=canvas.height-pad-fs/2; else y=canvas.height/2;
+      ctx.fillText(cfg.text,x,y);
+      ctx.globalAlpha=1;
+      canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('canvas empty')),'image/jpeg',0.95);
+    };
+    img.onerror=()=>reject(new Error('圖片載入失敗'));
+    img.src=URL.createObjectURL(file);
+  });
+}
+
 </script>
 </body>
 </html>
