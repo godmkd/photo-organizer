@@ -215,6 +215,7 @@ h1{font-size:1.4rem;font-weight:700;color:#90cdf4;margin-bottom:14px}
             <div><span class="step-badge">3</span>確認名字</div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
               <span id="groupStats" style="font-size:.8rem;color:#a0aec0;line-height:2"></span>
+              <button class="btn btn-ghost btn-sm" id="mergeCheckedBtn" onclick="mergeChecked()" style="display:none">⊕ 合併勾選</button>
               <button class="btn btn-primary btn-sm" id="autoDetectBtn" onclick="autoDetect()">🔍 自動辨識</button>
               <button class="btn btn-success btn-sm" id="organizeBtn" onclick="organizeFiles('named')" disabled>✅ 整理（已選名字照）</button>
               <button class="btn btn-warn btn-sm" id="organizeUnnamedBtn" onclick="organizeFiles('unnamed')" disabled>📁 整理（未選名字照）</button>
@@ -526,9 +527,11 @@ function renderGroups() {
             id="nameInput_${gi}">
           <div class="folder-preview" id="fp_${gi}" title="${escHtml(fn)}">${escHtml(fn)}</div>
           ${g.lowConf?'<span class="conf-warn">⚠ 請確認</span>':''}
-          <span style="margin-left:auto;display:flex;gap:4px">
+          <span style="margin-left:auto;display:flex;gap:4px;align-items:center">
             <button class="btn btn-primary btn-xs" title="單獨建立此組資料夾" onclick="organizeSingleGroup(${gi})">📁 建立資料夾</button>
-            ${gi>0?`<button class="btn btn-ghost btn-xs" title="合併到上一組" onclick="mergeGroupUp(${gi})">⊕ 合組</button>`:''}
+            <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:.72rem;color:#a0aec0" title="勾選後可合併">
+              <input type="checkbox" class="merge-check" data-gi="${gi}" onchange="updateMergeBtn()"> 合併
+            </label>
           </span>
         </div>
         <div id="gpills_${gi}"></div>
@@ -631,20 +634,28 @@ function updateOrgBtns() {
   if(stats)stats.textContent=`${groups.length} 組 | 已命名 ${named} 組`;
 }
 
-// Merge group gi into gi-1
-window.mergeGroupUp = function(gi) {
-  if(gi<=0||gi>=groups.length) return;
-  const target=groups[gi-1], src=groups[gi];
-  // Append photos, keep sorted by time
-  target.photos=[...target.photos,...src.photos].sort((a,b)=>new Date(a.time)-new Date(b.time));
-  // Keep target's namePhotoIdx if set; else adopt src's (recalculate index after sort)
-  // Simplest: clear namePhotoIdx so user re-selects after merge
+function updateMergeBtn(){
+  const checked=document.querySelectorAll('.merge-check:checked');
+  const btn=document.getElementById('mergeCheckedBtn');
+  btn.style.display=checked.length>=2?'inline-block':'none';
+  btn.textContent=`⊕ 合併勾選 (${checked.length})`;
+}
+
+window.mergeChecked = function() {
+  const checked=[...document.querySelectorAll('.merge-check:checked')].map(cb=>+cb.dataset.gi).sort((a,b)=>a-b);
+  if(checked.length<2){toast('請勾選至少 2 組','info');return;}
+  const target=groups[checked[0]];
+  for(let i=1;i<checked.length;i++){
+    const src=groups[checked[i]];
+    target.photos=[...target.photos,...src.photos];
+    if(!target.personName.trim()) target.personName=src.personName;
+  }
+  target.photos.sort((a,b)=>new Date(a.time)-new Date(b.time));
   target.namePhotoIdx=null;
-  // Keep target person name; inherit src's if target is empty
-  if(!target.personName.trim()) target.personName=src.personName;
-  groups.splice(gi,1);
+  // 從後往前刪除，避免 index 錯位
+  for(let i=checked.length-1;i>=1;i--) groups.splice(checked[i],1);
   renderGroups();
-  toast(`第 ${gi+1} 組已合併到第 ${gi} 組`,'success');
+  toast(`已合併 ${checked.length} 組`,'success');
 };
 
 // OCR
