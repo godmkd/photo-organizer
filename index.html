@@ -71,8 +71,8 @@ h1{font-size:1.4rem;font-weight:700;color:#90cdf4;margin-bottom:14px}
 .folder-preview{font-size:.68rem;color:#90cdf4;background:rgba(49,130,206,.12);padding:2px 6px;border-radius:3px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:default}
 .conf-warn{font-size:.72rem;color:#f6e05e;background:rgba(246,224,94,.12);padding:1px 5px;border-radius:3px;border:1px solid rgba(246,224,94,.25)}
 .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px;padding:9px}
-.photo-item{position:relative;border-radius:6px;overflow:hidden;cursor:pointer;aspect-ratio:1;background:#000}
-.photo-item img{width:100%;height:100%;object-fit:cover;display:block}
+.photo-item{position:relative;border-radius:6px;overflow:hidden;cursor:pointer;background:#000}
+.photo-item img{width:100%;height:auto;object-fit:contain;display:block}
 .photo-item.name-photo{outline:3px solid #f6e05e}
 .name-badge{position:absolute;top:3px;left:3px;background:#f6e05e;color:#000;font-size:.58rem;font-weight:700;padding:1px 4px;border-radius:3px}
 .photo-item:hover img{opacity:.82}
@@ -97,6 +97,14 @@ h1{font-size:1.4rem;font-weight:700;color:#90cdf4;margin-bottom:14px}
 .edit-controls{padding:2px 4px 5px;display:none;gap:3px;flex-wrap:wrap;justify-content:center}
 .edit-item.selected .edit-controls{display:flex}
 .edit-sel-count{font-size:.85rem;color:#68d391;font-weight:600}
+/* Folder tree */
+.folder-tree{max-height:300px;overflow-y:auto;background:rgba(0,0,0,.2);border-radius:7px;padding:8px;margin-top:8px}
+.folder-tree-item{display:flex;align-items:center;gap:5px;padding:4px 6px;border-radius:5px;cursor:pointer;font-size:.82rem;color:#a0aec0;transition:background .12s}
+.folder-tree-item:hover{background:rgba(255,255,255,.08)}
+.folder-tree-item.active{background:rgba(49,130,206,.2);color:#90cdf4}
+.folder-tree-item .tree-icon{flex-shrink:0}
+.folder-tree-item .tree-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.folder-tree-children{padding-left:16px}
 /* Common */
 .tip{background:rgba(99,179,237,.1);border:1px solid rgba(99,179,237,.2);border-radius:7px;padding:8px 12px;font-size:.78rem;color:#90cdf4;margin-bottom:10px}
 .browser-warn{background:rgba(229,62,62,.1);border:1px solid rgba(229,62,62,.3);border-radius:7px;padding:8px 12px;font-size:.78rem;color:#fc8181;margin-bottom:12px;display:none}
@@ -210,10 +218,14 @@ h1{font-size:1.4rem;font-weight:700;color:#90cdf4;margin-bottom:14px}
 
         <div class="card">
           <div style="margin-bottom:10px"><span class="step-badge">1</span>選取資料夾</div>
-          <div class="upload-zone" onclick="selectEditFolder()">
+          <div class="upload-zone" onclick="selectEditRootFolder()">
             <div class="upload-icon">🖼️</div>
-            <div class="upload-text" id="editUploadText">點擊選取要編輯的資料夾</div>
-            <div class="upload-hint" id="editUploadHint">需要 Chrome 或 Edge</div>
+            <div class="upload-text" id="editUploadText">點擊選取根資料夾</div>
+            <div class="upload-hint" id="editUploadHint">需要 Chrome 或 Edge・選取後可從樹狀圖切換子資料夾</div>
+          </div>
+          <div id="folderTreeWrap" style="display:none">
+            <div style="font-size:.78rem;color:#718096;margin-top:8px">📂 點擊子資料夾切換</div>
+            <div class="folder-tree" id="folderTree"></div>
           </div>
         </div>
 
@@ -755,19 +767,84 @@ function updateEditPreview(){
   const el=document.getElementById('editFolderPreview');if(el)el.textContent=preview;
 }
 
-async function selectEditFolder(){
+let editRootHandle=null;
+
+async function selectEditRootFolder(){
   if(!window.showDirectoryPicker){toast('請使用 Chrome 或 Edge','error');return;}
-  try{editDirHandle=await window.showDirectoryPicker({mode:'readwrite'});}
+  try{editRootHandle=await window.showDirectoryPicker({mode:'readwrite'});}
   catch(e){if(e.name!=='AbortError')toast('無法開啟：'+e.message,'error');return;}
-  document.getElementById('editUploadText').textContent=`📁 ${editDirHandle.name}`;
-  document.getElementById('editUploadHint').innerHTML=`<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();selectEditFolder()">換資料夾</button>`;
+  document.getElementById('editUploadText').textContent=`📁 ${editRootHandle.name}`;
+  document.getElementById('editUploadHint').innerHTML=`<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();selectEditRootFolder()">換資料夾</button>`;
+  await buildFolderTree();
+}
+
+async function buildFolderTree(){
+  const wrap=document.getElementById('folderTreeWrap');
+  const tree=document.getElementById('folderTree');
+  wrap.style.display='block';
+  tree.innerHTML='<div style="font-size:.78rem;color:#718096">掃描中...</div>';
+  const root=await scanDir(editRootHandle, 0);
+  tree.innerHTML=renderTreeNode(root, '');
+}
+
+async function scanDir(handle, depth){
+  const node={name:handle.name, handle, children:[], hasImages:false};
+  if(depth>5) return node; // limit depth
+  for await(const[name,child] of handle){
+    if(child.kind==='directory'){
+      node.children.push(await scanDir(child, depth+1));
+    }else if(/\.(jpe?g|png|heic|heif|webp|bmp|gif|tiff?)$/i.test(name)){
+      node.hasImages=true;
+    }
+  }
+  node.children.sort((a,b)=>a.name.localeCompare(b.name));
+  return node;
+}
+
+function renderTreeNode(node, path){
+  const fullPath=path?path+'/'+node.name:node.name;
+  const imgMark=node.hasImages?` <span style="color:#68d391;font-size:.7rem">🖼</span>`:'';
+  let html=`<div class="folder-tree-item" data-path="${escHtml(fullPath)}" onclick="loadEditFolder(this)" data-handle-name="${escHtml(node.name)}">
+    <span class="tree-icon">${node.children.length?'📂':'📁'}</span>
+    <span class="tree-name">${escHtml(node.name)}${imgMark}</span>
+    <span style="font-size:.65rem;color:#718096;margin-left:auto">${node.children.length?node.children.length+' 夾':''}</span>
+  </div>`;
+  if(node.children.length){
+    html+=`<div class="folder-tree-children">`;
+    for(const child of node.children) html+=renderTreeNode(child, fullPath);
+    html+=`</div>`;
+  }
+  // Store handle reference
+  if(!window._folderHandles) window._folderHandles={};
+  window._folderHandles[fullPath]=node.handle;
+  return html;
+}
+
+window.loadEditFolder=async function(el){
+  const path=el.dataset.path;
+  const handle=window._folderHandles?.[path];
+  if(!handle){toast('找不到資料夾','error');return;}
+  // highlight active
+  document.querySelectorAll('.folder-tree-item').forEach(e=>e.classList.remove('active'));
+  el.classList.add('active');
+  editDirHandle=handle;
+  await loadEditImages();
+};
+
+async function loadEditImages(){
   const imgs=[];
   for await(const[name,handle]of editDirHandle){
     if(handle.kind!=='file')continue;
     if(!/\.(jpe?g|png|heic|heif|webp|bmp|gif|tiff?)$/i.test(name))continue;
     const file=await handle.getFile();imgs.push({file,name});
   }
-  if(!imgs.length){toast('沒有找到圖片','error');return;}
+  if(!imgs.length){
+    toast('此資料夾沒有圖片','info');
+    editFiles=[];editSelected=new Set();editTransforms={};editSelOrder=[];
+    document.getElementById('editGrid').innerHTML='<div style="font-size:.82rem;color:#718096;padding:20px;text-align:center">此資料夾沒有圖片</div>';
+    document.getElementById('editSection').style.display='block';
+    updateEditSelCount();return;
+  }
   for(const item of imgs){
     try{
       const exif=await exifr.parse(item.file,['DateTimeOriginal','CreateDate','DateTime']);
