@@ -674,6 +674,10 @@ async function organizeFiles(mode) {
         const p=g.photos[pi];
         const fh=await personDir.getFileHandle(p.name,{create:true});
         const w=await fh.createWritable();await w.write(p.file);await w.close();
+        // 名字照留在原始資料夾當備份，其他照片從原始資料夾刪除
+        if(pi!==g.namePhotoIdx){
+          try{await dirHandle.removeEntry(p.name);}catch(e){}
+        }
         done++;btn.textContent=`整理中 ${done}/${total}`;
       }
     }
@@ -698,6 +702,10 @@ window.organizeSingleGroup = async function(gi) {
       const p = g.photos[pi];
       const fh = await personDir.getFileHandle(p.name, { create: true });
       const w = await fh.createWritable(); await w.write(p.file); await w.close();
+      // 名字照留在原始資料夾當備份，其他照片從原始資料夾刪除
+      if (pi !== g.namePhotoIdx) {
+        try { await dirHandle.removeEntry(p.name); } catch (e) {}
+      }
       if (btn) btn.textContent = `${pi + 1}/${g.photos.length}`;
     }
     toast(`第 ${gi + 1} 組「${fn}」建立完成！${g.photos.length} 張`, 'success');
