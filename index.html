@@ -76,6 +76,9 @@ h1{font-size:1.4rem;font-weight:700;color:#90cdf4;margin-bottom:14px}
 .photo-item.name-photo{outline:3px solid #f6e05e}
 .name-badge{position:absolute;top:3px;left:3px;background:#f6e05e;color:#000;font-size:.58rem;font-weight:700;padding:1px 4px;border-radius:3px}
 .photo-item:hover img{opacity:.82}
+.lb-zoom{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.5);border:none;cursor:pointer;border-radius:4px;padding:1px 4px;font-size:.65rem;line-height:1;opacity:0;transition:opacity .15s;z-index:2}
+.photo-item:hover .lb-zoom,.edit-thumb-wrap:hover .lb-zoom{opacity:1}
+.lb-zoom:hover{background:rgba(255,255,255,.3)}
 .photo-time{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.8));font-size:.56rem;color:#e2e8f0;padding:9px 3px 2px;text-align:center}
 .no-exif{position:absolute;top:3px;right:3px;background:#e53e3e;color:#fff;font-size:.55rem;padding:1px 3px;border-radius:2px}
 .step-badge{display:inline-block;background:#3182ce;color:#fff;border-radius:5px;padding:2px 7px;font-size:.72rem;font-weight:700;margin-right:5px}
@@ -105,6 +108,17 @@ h1{font-size:1.4rem;font-weight:700;color:#90cdf4;margin-bottom:14px}
 .folder-tree-item .tree-icon{flex-shrink:0}
 .folder-tree-item .tree-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .folder-tree-children{padding-left:16px}
+/* Lightbox */
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:10000;display:flex;align-items:center;justify-content:center;cursor:zoom-out;opacity:0;transition:opacity .2s;pointer-events:none}
+.lightbox.show{opacity:1;pointer-events:auto}
+.lightbox img{max-width:92vw;max-height:92vh;object-fit:contain;border-radius:6px;box-shadow:0 4px 30px rgba(0,0,0,.5)}
+.lightbox .lb-close{position:absolute;top:14px;right:18px;color:#fff;font-size:1.6rem;cursor:pointer;background:rgba(0,0,0,.4);border:none;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center}
+.lightbox .lb-close:hover{background:rgba(255,255,255,.2)}
+.lightbox .lb-nav{position:absolute;top:50%;transform:translateY(-50%);color:#fff;font-size:2rem;cursor:pointer;background:rgba(0,0,0,.4);border:none;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center}
+.lightbox .lb-nav:hover{background:rgba(255,255,255,.2)}
+.lightbox .lb-prev{left:12px}
+.lightbox .lb-next{right:12px}
+.lightbox .lb-info{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);color:#e2e8f0;font-size:.82rem;background:rgba(0,0,0,.5);padding:4px 12px;border-radius:5px}
 /* Common */
 .tip{background:rgba(99,179,237,.1);border:1px solid rgba(99,179,237,.2);border-radius:7px;padding:8px 12px;font-size:.78rem;color:#90cdf4;margin-bottom:10px}
 .browser-warn{background:rgba(229,62,62,.1);border:1px solid rgba(229,62,62,.3);border-radius:7px;padding:8px 12px;font-size:.78rem;color:#fc8181;margin-bottom:12px;display:none}
@@ -261,6 +275,13 @@ h1{font-size:1.4rem;font-weight:700;color:#90cdf4;margin-bottom:14px}
     </div><!-- /main -->
   </div><!-- /layout -->
 
+  <div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+    <button class="lb-close" onclick="closeLightbox()">&times;</button>
+    <button class="lb-nav lb-prev" onclick="event.stopPropagation();navLightbox(-1)">‹</button>
+    <button class="lb-nav lb-next" onclick="event.stopPropagation();navLightbox(1)">›</button>
+    <img id="lbImg" src="">
+    <div class="lb-info" id="lbInfo"></div>
+  </div>
   <div class="toast-container" id="toastContainer"></div>
 </div>
 
@@ -287,6 +308,39 @@ function toast(msg,type='info'){
   t.className=`toast toast-${type}`;t.textContent=msg;c.appendChild(t);
   requestAnimationFrame(()=>t.classList.add('show'));
   setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),300);},3500);
+}
+
+// ════════════════════════════════
+//  LIGHTBOX
+// ════════════════════════════════
+let lbFiles=[], lbIndex=0, lbBlobUrl=null;
+function openLightbox(files, index){
+  lbFiles=files; lbIndex=index;
+  showLbImage();
+  document.getElementById('lightbox').classList.add('show');
+  document.addEventListener('keydown', lbKeyHandler);
+}
+function closeLightbox(e){
+  if(e && e.target.tagName==='IMG') return; // don't close when clicking image
+  document.getElementById('lightbox').classList.remove('show');
+  if(lbBlobUrl){URL.revokeObjectURL(lbBlobUrl);lbBlobUrl=null;}
+  document.removeEventListener('keydown', lbKeyHandler);
+}
+function navLightbox(dir){
+  lbIndex=(lbIndex+dir+lbFiles.length)%lbFiles.length;
+  showLbImage();
+}
+function showLbImage(){
+  if(lbBlobUrl){URL.revokeObjectURL(lbBlobUrl);lbBlobUrl=null;}
+  const f=lbFiles[lbIndex];
+  lbBlobUrl=URL.createObjectURL(f.file);
+  document.getElementById('lbImg').src=lbBlobUrl;
+  document.getElementById('lbInfo').textContent=`${f.name}  (${lbIndex+1}/${lbFiles.length})`;
+}
+function lbKeyHandler(e){
+  if(e.key==='Escape')closeLightbox();
+  if(e.key==='ArrowLeft')navLightbox(-1);
+  if(e.key==='ArrowRight')navLightbox(1);
 }
 
 // ════════════════════════════════
@@ -499,6 +553,7 @@ function buildThumb(p,gi,pi,isName){
     <img id="thumb_${gi}_${pi}" loading="lazy" data-gi="${gi}" data-pi="${pi}">
     ${isName?'<div class="name-badge">名字</div>':''}
     ${p.noExif?'<div class="no-exif">無EXIF</div>':''}
+    <button class="lb-zoom" onclick="event.stopPropagation();openLightbox(groups[${gi}].photos,${pi})" title="放大">🔍</button>
     <div class="photo-time">${fmtTime(p.time,true)}</div>
   </div>`;
 }
@@ -889,6 +944,7 @@ function renderEditGrid(){
       <div class="edit-thumb-wrap">
         <img id="et_${f.idx}" loading="lazy" data-ei="${f.idx}" style="transform:${cssTransform(editTransforms[f.idx])}">
         <div class="sel-badge" id="esb_${f.idx}">${editSelOrder.indexOf(f.idx)>=0?editSelOrder.indexOf(f.idx)+1:''}</div>
+        <button class="lb-zoom" onclick="event.stopPropagation();openLightbox(editFiles,${f.idx})" title="放大">🔍</button>
       </div>
       <div class="edit-filename" title="${escHtml(f.name)}">${escHtml(f.name)}</div>
       <div class="edit-controls" id="ec_${f.idx}" style="display:${editSelected.has(f.idx)?'flex':'none'}">
