@@ -693,6 +693,19 @@ async function organizeFiles(mode) {
         done++;btn.textContent=`整理中 ${done}/${total}`;
       }
     }
+    // 更新畫面：移除已搬移的照片，只保留名字照
+    for(const g of targetGroups){
+      if(g.namePhotoIdx!==null){
+        const namePhoto=g.photos[g.namePhotoIdx];
+        g.photos=[namePhoto];
+        g.namePhotoIdx=0;
+      }else{
+        g.photos=[];
+      }
+    }
+    // 移除空組
+    groups=groups.filter(g=>g.photos.length>0);
+    renderGroups();
     toast(`整理完成！${targetGroups.length} 組、${total} 張`,'success');
   }catch(e){toast('整理失敗：'+e.message,'error');}
   finally{
@@ -720,7 +733,18 @@ window.organizeSingleGroup = async function(gi) {
       }
       if (btn) btn.textContent = `${pi + 1}/${g.photos.length}`;
     }
-    toast(`第 ${gi + 1} 組「${fn}」建立完成！${g.photos.length} 張`, 'success');
+    // 更新畫面：只保留名字照
+    if (g.namePhotoIdx !== null) {
+      const namePhoto = g.photos[g.namePhotoIdx];
+      g.photos = [namePhoto];
+      g.namePhotoIdx = 0;
+    } else {
+      g.photos = [];
+    }
+    // 移除空組
+    groups = groups.filter(gr => gr.photos.length > 0);
+    renderGroups();
+    toast(`第 ${gi + 1} 組「${fn}」建立完成！`, 'success');
   } catch (e) { toast('建立失敗：' + e.message, 'error'); }
   finally { if (btn) { btn.disabled = false; btn.textContent = '📁 建立資料夾'; } }
 };
