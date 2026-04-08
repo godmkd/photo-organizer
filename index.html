@@ -670,15 +670,10 @@ async function organizeFiles(mode) {
     for(const g of targetGroups){
       const fn=groupFolderName(g);
       const personDir=await dirHandle.getDirectoryHandle(fn,{create:true});
-      const origDir=g.namePhotoIdx!=null?await personDir.getDirectoryHandle('原始',{create:true}):null;
       for(let pi=0;pi<g.photos.length;pi++){
         const p=g.photos[pi];
         const fh=await personDir.getFileHandle(p.name,{create:true});
         const w=await fh.createWritable();await w.write(p.file);await w.close();
-        if(origDir&&pi===g.namePhotoIdx){
-          const ofh=await origDir.getFileHandle(p.name,{create:true});
-          const ow=await ofh.createWritable();await ow.write(p.file);await ow.close();
-        }
         done++;btn.textContent=`整理中 ${done}/${total}`;
       }
     }
@@ -699,15 +694,10 @@ window.organizeSingleGroup = async function(gi) {
   if (btn) btn.disabled = true;
   try {
     const personDir = await dirHandle.getDirectoryHandle(fn, { create: true });
-    const origDir = g.namePhotoIdx != null ? await personDir.getDirectoryHandle('原始', { create: true }) : null;
     for (let pi = 0; pi < g.photos.length; pi++) {
       const p = g.photos[pi];
       const fh = await personDir.getFileHandle(p.name, { create: true });
       const w = await fh.createWritable(); await w.write(p.file); await w.close();
-      if (origDir && pi === g.namePhotoIdx) {
-        const ofh = await origDir.getFileHandle(p.name, { create: true });
-        const ow = await ofh.createWritable(); await ow.write(p.file); await ow.close();
-      }
       if (btn) btn.textContent = `${pi + 1}/${g.photos.length}`;
     }
     toast(`第 ${gi + 1} 組「${fn}」建立完成！${g.photos.length} 張`, 'success');
