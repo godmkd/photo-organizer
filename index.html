@@ -460,7 +460,10 @@ function renderGroups() {
             id="nameInput_${gi}">
           <div class="folder-preview" id="fp_${gi}" title="${escHtml(fn)}">${escHtml(fn)}</div>
           ${g.lowConf?'<span class="conf-warn">⚠ 請確認</span>':''}
-          ${gi>0?`<button class="btn btn-ghost btn-xs" style="margin-left:auto" title="合併到上一組" onclick="mergeGroupUp(${gi})">⊕ 合組</button>`:''}
+          <span style="margin-left:auto;display:flex;gap:4px">
+            <button class="btn btn-primary btn-xs" title="單獨建立此組資料夾" onclick="organizeSingleGroup(${gi})">📁 建立資料夾</button>
+            ${gi>0?`<button class="btn btn-ghost btn-xs" title="合併到上一組" onclick="mergeGroupUp(${gi})">⊕ 合組</button>`:''}
+          </span>
         </div>
         <div id="gpills_${gi}"></div>
       </div>
@@ -686,6 +689,31 @@ async function organizeFiles(mode) {
     updateOrgBtns();
   }
 }
+
+window.organizeSingleGroup = async function(gi) {
+  const g = groups[gi];
+  if (!g) return;
+  if (!dirHandle) { toast('請先選取資料夾', 'error'); return; }
+  const fn = groupFolderName(g);
+  const btn = document.querySelector(`#gc_${gi} .btn-primary`);
+  if (btn) btn.disabled = true;
+  try {
+    const personDir = await dirHandle.getDirectoryHandle(fn, { create: true });
+    const origDir = g.namePhotoIdx != null ? await personDir.getDirectoryHandle('原始', { create: true }) : null;
+    for (let pi = 0; pi < g.photos.length; pi++) {
+      const p = g.photos[pi];
+      const fh = await personDir.getFileHandle(p.name, { create: true });
+      const w = await fh.createWritable(); await w.write(p.file); await w.close();
+      if (origDir && pi === g.namePhotoIdx) {
+        const ofh = await origDir.getFileHandle(p.name, { create: true });
+        const ow = await ofh.createWritable(); await ow.write(p.file); await ow.close();
+      }
+      if (btn) btn.textContent = `${pi + 1}/${g.photos.length}`;
+    }
+    toast(`第 ${gi + 1} 組「${fn}」建立完成！${g.photos.length} 張`, 'success');
+  } catch (e) { toast('建立失敗：' + e.message, 'error'); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = '📁 建立資料夾'; } }
+};
 
 // ════════════════════════════════
 //  TAB 2 — 照片編輯
