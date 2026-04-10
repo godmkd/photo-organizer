@@ -473,6 +473,9 @@ function switchTab(name) {
     document.querySelectorAll('.tab-btn')[i].classList.toggle('active',n===name);
     document.getElementById('tab-'+n).classList.toggle('active',n===name);
   });
+  // Hide sidebar for tabs that don't need it
+  const sidebar = document.querySelector('.sidebar');
+  if (sidebar) sidebar.style.display = ['organizer','editor','watermark'].includes(name) ? '' : 'none';
 }
 if (!window.showDirectoryPicker) document.getElementById('browserWarn').style.display='block';
 function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
