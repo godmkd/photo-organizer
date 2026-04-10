@@ -34,8 +34,8 @@ h1{font-size:1.4rem;font-weight:700;color:#90cdf4;margin-bottom:14px}
 .ns-preview strong{color:#f6e05e}
 /* Common */
 .card{background:#16213e;border-radius:12px;padding:18px;margin-bottom:14px;border:1px solid rgba(255,255,255,.08)}
-.tabs{display:flex;gap:3px;margin-bottom:0;border-bottom:1px solid rgba(255,255,255,.1);background:#1a1a2e;padding:8px 0;flex-wrap:wrap}
-.tab-btn{padding:7px 18px;border-radius:8px 8px 0 0;border:none;cursor:pointer;font-size:.88rem;font-weight:600;background:transparent;color:#718096;border-bottom:2px solid transparent;transition:all .15s}
+.tabs{display:flex;gap:2px;margin-bottom:0;border-bottom:1px solid rgba(255,255,255,.1);background:#1a1a2e;padding:8px 0;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tab-btn{padding:6px 10px;border-radius:8px 8px 0 0;border:none;cursor:pointer;font-size:.8rem;font-weight:600;background:transparent;color:#718096;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;flex-shrink:0}
 .tab-btn.active{color:#90cdf4;border-bottom-color:#3182ce;background:rgba(49,130,206,.08)}
 .tab-btn:hover:not(.active){color:#a0aec0;background:rgba(255,255,255,.04)}
 .tab-section{display:none;padding-top:12px}.tab-section.active{display:block}
