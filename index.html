@@ -375,13 +375,11 @@ h1{font-size:1.4rem;font-weight:700;color:#90cdf4;margin-bottom:14px}
       <!-- TAB 4: 遮罩裁切 -->
       <div class="tab-section" id="tab-mask">
         <div class="card">
-          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-            <span class="step-badge">1</span>
-            <div class="upload-zone" onclick="selectMaskFolder()" style="flex:1;padding:14px 20px;display:flex;align-items:center;gap:10px">
-              <span style="font-size:1.5rem">🖼️</span>
-              <div><div class="upload-text" id="maskUploadText" style="margin:0;font-size:.9rem">點擊選取資料夾</div>
-              <div class="upload-hint" style="margin:0">需要 Chrome 或 Edge</div></div>
-            </div>
+          <div style="margin-bottom:10px"><span class="step-badge">1</span>選取照片</div>
+          <div class="upload-zone" onclick="selectMaskFolder()">
+            <div class="upload-icon">🖼️</div>
+            <div class="upload-text" id="maskUploadText">點擊選取資料夾</div>
+            <div class="upload-hint">需要 Chrome 或 Edge</div>
           </div>
         </div>
         <div id="maskSection" style="display:none">
@@ -424,13 +422,11 @@ h1{font-size:1.4rem;font-weight:700;color:#90cdf4;margin-bottom:14px}
       <!-- TAB 5: 色調匹配 -->
       <div class="tab-section" id="tab-colormatch">
         <div class="card">
-          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-            <span class="step-badge">1</span>
-            <div class="upload-zone" onclick="selectCmFolder()" style="flex:1;padding:14px 20px;display:flex;align-items:center;gap:10px">
-              <span style="font-size:1.5rem">🎨</span>
-              <div><div class="upload-text" id="cmUploadText" style="margin:0;font-size:.9rem">點擊選取資料夾</div>
-              <div class="upload-hint" style="margin:0">需要 Chrome 或 Edge</div></div>
-            </div>
+          <div style="margin-bottom:10px"><span class="step-badge">1</span>選取資料夾</div>
+          <div class="upload-zone" onclick="selectCmFolder()">
+            <div class="upload-icon">🎨</div>
+            <div class="upload-text" id="cmUploadText">點擊選取資料夾</div>
+            <div class="upload-hint">需要 Chrome 或 Edge</div>
           </div>
         </div>
         <div id="cmSection" style="display:none">
