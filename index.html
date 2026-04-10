@@ -1496,15 +1496,22 @@ function addWatermarkToFile(file,cfg){
 }
 
 function drawDiagonalWatermark(ctx,text,fs,w,h){
+  if(!text||fs<1)return;
   const tw=ctx.measureText(text).width;
-  const gap=tw*0.6+fs;
+  if(tw<1)return;
+  const gap=Math.max(tw*0.6+fs, 20);
+  const stepY=Math.max(fs*2.5, 20);
+  const stepX=tw+gap;
+  if(stepX<5||stepY<5)return;
   const diag=Math.sqrt(w*w+h*h);
+  const maxIter=5000;let iter=0;
   ctx.save();
   ctx.translate(w/2,h/2);
   ctx.rotate(-Math.PI/4);
-  for(let y=-diag;y<diag;y+=fs*2.5){
-    for(let x=-diag;x<diag;x+=tw+gap){
+  for(let y=-diag;y<diag&&iter<maxIter;y+=stepY){
+    for(let x=-diag;x<diag&&iter<maxIter;x+=stepX){
       ctx.fillText(text,x,y);
+      iter++;
     }
   }
   ctx.restore();
