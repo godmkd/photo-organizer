@@ -136,6 +136,14 @@ h1{font-size:1.4rem;font-weight:700;color:#90cdf4;margin-bottom:14px}
   <h1>📸 照片工具</h1>
   <div class="browser-warn" id="browserWarn">⚠️ 此瀏覽器不支援直接寫入資料夾，請改用 Chrome 或 Edge。</div>
 
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('organizer')">照片整理</button>
+    <button class="tab-btn" onclick="switchTab('editor')">照片編輯</button>
+    <button class="tab-btn" onclick="switchTab('watermark')">浮水印</button>
+    <button class="tab-btn" onclick="switchTab('mask')">遮罩裁切</button>
+    <button class="tab-btn" onclick="switchTab('colormatch')">色調匹配</button>
+  </div>
+
   <div class="layout">
 
     <!-- ═══ SIDEBAR: 命名設定 ═══ -->
@@ -182,13 +190,6 @@ h1{font-size:1.4rem;font-weight:700;color:#90cdf4;margin-bottom:14px}
 
     <!-- ═══ MAIN CONTENT ═══ -->
     <div class="main">
-      <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('organizer')">照片整理</button>
-        <button class="tab-btn" onclick="switchTab('editor')">照片編輯</button>
-        <button class="tab-btn" onclick="switchTab('watermark')">浮水印</button>
-        <button class="tab-btn" onclick="switchTab('mask')">遮罩裁切</button>
-        <button class="tab-btn" onclick="switchTab('colormatch')">色調匹配</button>
-      </div>
 
       <!-- TAB 1: 照片整理 -->
       <div class="tab-section active" id="tab-organizer">
@@ -473,9 +474,6 @@ function switchTab(name) {
     document.querySelectorAll('.tab-btn')[i].classList.toggle('active',n===name);
     document.getElementById('tab-'+n).classList.toggle('active',n===name);
   });
-  // Hide sidebar for tabs that don't need it
-  const sidebar = document.querySelector('.sidebar');
-  if (sidebar) sidebar.style.display = ['organizer','editor','watermark'].includes(name) ? '' : 'none';
 }
 if (!window.showDirectoryPicker) document.getElementById('browserWarn').style.display='block';
 function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
